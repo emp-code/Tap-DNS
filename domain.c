@@ -7,7 +7,6 @@
 
 // Return zero if valid
 int isInvalidDomain(const char* domain, const size_t domainLen) {
-printf("%zd\n", domainLen);
 	if (domain == NULL) return 1;
 
 	if (domainLen < 4 || domainLen > TAPDNS_MAXLEN_DOMAIN) return 2;
