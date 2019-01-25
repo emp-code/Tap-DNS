@@ -17,6 +17,7 @@
 #include "Includes/bit.h"
 #include "protocol.h"
 
+#include "domain.h"
 #include "respond.h"
 
 int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
@@ -60,7 +61,7 @@ int queryDns(const char* req, const size_t reqLen, char* res) {
 	return ret;
 }
 
-// Respond to a DNS request
+// Respond to a client's DNS request
 int respond(const int sock) {
 	// Read the request from the client
 	char req[TAPDNS_BUFLEN + 1];
@@ -72,7 +73,13 @@ int respond(const int sock) {
 
 	printf("DEBUG: Domain '%s' requested (length: %d bytes)\n", domain, reqLen);
 
-	if (strcmp(domain, "localhost") == 0 || memcmp(domain + strlen(domain) - 4, ".tap", 4) == 0) {
+	if (isInvalidDomain(domain, domainLen)) {
+		puts("DEBUG: Invalid domain");
+		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+		return 0;
+	}
+
+	if (strcmp(domain, "localhost") == 0 || memcmp(domain + domainLen - 4, ".tap", 4) == 0) {
 		dnsSendAnswer(sock, req, 16777343); // 127.0.0.1
 		return 0;
 	}
@@ -87,16 +94,16 @@ int respond(const int sock) {
 
 	if (ip == 1) {
 		// Server-side error (such as non-existent domain)
-		dnsSendAnswer(sock, req, 0); // 0 = 0.0.0.0
+		dnsSendAnswer(sock, req, 0); // 0.0.0.0
 		puts("DEBUG: Server-side error");
 		return -2;
 	} else if (ip == 0) {
-		// We failed to parse the server's response
+		// Failed to parse the server's response
 		puts("ERROR: Failed to parse the server's response");
 		return -3;
 	}
 
-	// Everything went ok, respond to our client
+	// Everything OK, respond to our client
 	dnsSendAnswer(sock, req, ip);
 	return 0;
 }
