@@ -26,7 +26,7 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
 	if (len < 0) return len;
 
 	const int ret = send(sockIn, answer, len, 0);
-	
+
 	if (ret == len) {
 		// Message sent successfully
 		return 0;
@@ -89,7 +89,7 @@ int respond(const int sock) {
 	if (resLen < 0) {printf("ERROR: Failed to receive response from DNS server: %d\n", resLen); return -1;}
 
 	// Get the IP address from the response
-	uint32_t ip = dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, resLen);
+	const uint32_t ip = dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, resLen);
 
 	if (ip == 1) {
 		// Server-side error (such as non-existent domain)

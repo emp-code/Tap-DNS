@@ -24,7 +24,7 @@ int initSocket(const int sock) {
 
 	const int ret = bind(sock, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (ret < 0) return ret;
-	
+
 	listen(sock, 25); // socket, backlog (# of connections to keep in queue)
 	return 0;
 }
@@ -52,10 +52,7 @@ int acceptConnections_tcp() {
 		if (newSock < 0) {puts("ERROR: Failed to create socket for accepting connection"); return -1;}
 
 		const int pid = fork();
-		if (pid < 0) {
-			puts("ERROR: Failed fork");
-			return -11;
-		}
+		if (pid < 0) {puts("ERROR: Failed to fork"); return -2;}
 
 		if (pid == 0) {
 			// Child thread: Respond to the client
@@ -79,6 +76,5 @@ int main() {
 	puts(">>> Tap:DNS - The Attenuating Proxy: Deadbolt Name Service");
 
 	acceptConnections_tcp();
-
 	return 0;
 }
