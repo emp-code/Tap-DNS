@@ -86,11 +86,11 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
-	// Byte 3, Bits 2-5 (4 bits): OPCODE (kind of query). Copy from Request.
-	setBit(answer + 4, 2, getBit(req + 4, 2));
-	setBit(answer + 4, 3, getBit(req + 4, 3));
-	setBit(answer + 4, 4, getBit(req + 4, 4));
-	setBit(answer + 4, 5, getBit(req + 4, 5));
+	// Byte 3, Bits 2-5 (4 bits). OPCODE (kind of query). 0000 = Standard query.
+	setBit(answer + 4, 2, 0);
+	setBit(answer + 4, 3, 0);
+	setBit(answer + 4, 4, 0);
+	setBit(answer + 4, 5, 0);
 
 	// Byte 3, Bits 6-8; Byte 4, Bits 1-4
 	setBit(answer + 4, 6, 1); // Byte 3, Bit 6: Authoritative Answer. 0 = No, 1 = Yes.
