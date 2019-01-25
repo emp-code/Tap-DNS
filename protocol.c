@@ -13,9 +13,11 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 
 	// Bytes 1-2: Transaction ID.
 	FILE* fp = fopen("/dev/random", "rb");
-	rq[2] = fgetc(fp);
-	rq[3] = fgetc(fp);
-	fclose(fp);
+	if (fp != NULL) {
+		rq[2] = fgetc(fp);
+		rq[3] = fgetc(fp);
+		fclose(fp);
+	}
 
 	setBit(rq + 4, 1, 0); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
