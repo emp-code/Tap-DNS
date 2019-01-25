@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 
 #include "Includes/bit.h"
 
@@ -60,21 +61,13 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 		setBit(answer + 5, 8, 0); // Byte 4. Bit 8.
 	}
 
-// cleanup from here TODO
-
-	const char zero16[] = {0, 0}; const char one16[] = {0, 1};
 	// Bytes   5-6: QDCOUNT. Number of entries in the question section.
 	answer[6] = 0;
 	answer[7] = 1;
-	
+
 	// Bytes 7-8: ANCOUNT. Number of resource records in the answer section.
-	if (ip == 0) {
-		answer[8] = 0;
-		answer[9] = 1;
-	} else {
-		answer[8] = 0;
-		answer[9] = 1;
-	}
+	answer[8] = 0;
+	answer[9] = 1;
 
 	// Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section.
 	answer[10] = 0;
@@ -84,12 +77,12 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	answer[12] = 0;
 	answer[13] = 0;
 
-	// Bytes 13+ Question
+	// Bytes 13+ Question, copied from the request
 	const size_t questionLen = strlen(req + 14) + 5;
 	memcpy(answer + 14, req + 14, questionLen);
 	
 	size_t totalLen = 14 + questionLen;
-	
+
 	if (ip != 0) {
 		char rr[] = {
 			'\xc0', '\x0c', // Name (pointer)
@@ -104,15 +97,9 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 		totalLen += 16;
 	}
 
-	// TCP DNS messages have two extra bytes in the beginning.
-	// Meaning of Byte 1 is unknown. Leave at 0.
-	answer[1] = (char)(totalLen - 2); // Byte 2: Length of TCP message, ignoring first two bytes
-
-/*
 	// TCP DNS messages start with a 16 bit integer containing the length of the message (not counting the integer itself)
-	int16_t msgLen = totalLen - 2;
+	const int16_t msgLen = htons(totalLen - 2); // host to network byte order
 	memcpy(answer, &msgLen, 2);
-*/
 
 	return totalLen;
 }
