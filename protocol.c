@@ -82,6 +82,7 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 
 	// Bytes 13+ Question. Copy from Request.
 	const size_t questionLen = strlen(req + 14) + 5;
+	if (questionLen + 30 > 99) return -8;
 	memcpy(answer + 14, req + 14, questionLen);
 
 	size_t totalLen = 14 + questionLen;
