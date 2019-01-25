@@ -1,7 +1,7 @@
-#include <ctype.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
+#include <ctype.h>
 #include <arpa/inet.h>
 
 #include "Includes/bit.h"
@@ -9,9 +9,9 @@
 #include "protocol.h"
 
 int dnsCreateAnswer(char* answer, const char* req, const int ip) {
-	memset(answer, 0, 50);
+	memset(answer, 0, 99);
 
-	memcpy(answer + 2, req + 2, 2); // Bytes 1-2: Transaction ID. Copy from Request
+	memcpy(answer + 2, req + 2, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
@@ -80,10 +80,10 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	answer[12] = 0;
 	answer[13] = 0;
 
-	// Bytes 13+ Question, copied from the request
+	// Bytes 13+ Question. Copy from Request.
 	const size_t questionLen = strlen(req + 14) + 5;
 	memcpy(answer + 14, req + 14, questionLen);
-	
+
 	size_t totalLen = 14 + questionLen;
 
 	if (ip != 0) {
@@ -120,12 +120,12 @@ size_t dnsRequest_GetDomain(const char* req, char* holder) {
 	while(1) {
 		const size_t addLen = req[startLen];
 		if (addLen == 0) break;
-		
+
 		holder[domainLen] = '.';
 
 		for (size_t leftLen = addLen; leftLen > 0; leftLen--)
 			holder[domainLen + 1 + addLen - leftLen] = tolower(req[startLen + 1 + addLen - leftLen]);
-		
+
 		domainLen += addLen + 1;
 		startLen += addLen + 1;
 	}
