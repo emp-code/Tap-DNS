@@ -11,23 +11,23 @@
 int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	memset(rq, 0, 99);
 
-	memcpy(rq + 2, domain, 2); // Bytes 1-2. Transaction ID. Set to anything.
-	setBit(rq + 4, 1, 0); // Byte 3, Bit 1. QR (Query/Response). 0 = Query, 1 = Response.
+	memcpy(rq + 2, domain, 2); // Bytes 1-2: Transaction ID. Set to anything.
+	setBit(rq + 4, 1, 0); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
-	// Byte 3, Bits 2-5 (4 bits). OPCODE (kind of query). 0000 = Standard query.
+	// Byte 3, Bits 2-5 (4 bits): OPCODE (kind of query). 0000 = Standard query.
 	setBit(rq + 4, 2, 0);
 	setBit(rq + 4, 3, 0);
 	setBit(rq + 4, 4, 0);
 	setBit(rq + 4, 5, 0);
 
-	setBit(rq + 4, 6, 0); // Byte 3, Bit 6. Authoritative Answer? N/A.
-	setBit(rq + 4, 7, 0); // Byte 3, Bit 7. Truncation?
-	setBit(rq + 4, 8, 1); // Byte 3, Bit 8. Recursion desired?
-	setBit(rq + 5, 1, 0); // Byte 4, Bit 1. Recursion Available? N/A.
-
-	setBit(rq + 5, 2, 0); // Byte 4. Bit 2. Reserved. Must be Zero.
-	setBit(rq + 5, 3, 0); // Byte 4. Bit 3. Reserved. Must be Zero.
-	setBit(rq + 5, 4, 0); // Byte 4. Bit 4. Reserved. Must be Zero.
+	// Byte 3: Bits 6-8; Byte 4, Bits 1-4
+	setBit(rq + 4, 6, 0); // Byte 3, Bit 6: Authoritative answer. N/A.
+	setBit(rq + 4, 7, 0); // Byte 3, Bit 7: Truncated message.
+	setBit(rq + 4, 8, 1); // Byte 3, Bit 8: Recursion desired.
+	setBit(rq + 5, 1, 0); // Byte 4, Bit 1: Recursion available. N/A.
+	setBit(rq + 5, 2, 0); // Byte 4. Bit 2: Reserved. Must be 0.
+	setBit(rq + 5, 3, 0); // Byte 4. Bit 3: Reserved. Must be 0.
+	setBit(rq + 5, 4, 0); // Byte 4. Bit 4: Reserved. Must be 0.
 
 	// Response code. N/A.
 	setBit(rq + 5, 5, 0); // Byte 4. Bit 5.
@@ -35,15 +35,16 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	setBit(rq + 5, 7, 0); // Byte 4. Bit 7.
 	setBit(rq + 5, 8, 0); // Byte 4. Bit 8.
 
-	// Bytes 5-6: QDCOUNT. Number of entries in the question section.
+	// Bytes 5-6: QDCOUNT: Number of entries in the question section.
 	rq[6] = 0;
 	rq[7] = 1;
 
-	memset(rq +  8, 0, 2); // Bytes 7-8: ANCOUNT. Number of resource records in the answer section. N/A.
-	memset(rq + 10, 0, 2); // Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section. N/A.
-	memset(rq + 12, 0, 2); // Bytes 11-12: ARCOUNT. Number of resource records in the additional records section. N/A.
+	memset(rq +  8, 0, 2); // Bytes 7-8: ANCOUNT: Number of resource records in the answer section. N/A.
+	memset(rq + 10, 0, 2); // Bytes 9-10: NSCOUNT: Number of name server resource records in the authority records section. N/A.
+	memset(rq + 12, 0, 2); // Bytes 11-12: ARCOUNT: Number of resource records in the additional records section. N/A.
 
-	// Bytes 13+ Question
+	// Bytes 13+: Question section
+
 	// Convert domain name to question format
 	char *dom = domain;
 	size_t offset = 0;
@@ -86,20 +87,20 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
-	// Byte 3, Bits 2-5 (4 bits). OPCODE (kind of query). 0000 = Standard query.
+	// Byte 3: Bits 2-5 (4 bits): OPCODE (kind of query). 0000 = Standard query.
 	setBit(answer + 4, 2, 0);
 	setBit(answer + 4, 3, 0);
 	setBit(answer + 4, 4, 0);
 	setBit(answer + 4, 5, 0);
 
-	// Byte 3, Bits 6-8; Byte 4, Bits 1-4
-	setBit(answer + 4, 6, 1); // Byte 3, Bit 6: Authoritative Answer. 0 = No, 1 = Yes.
-	setBit(answer + 4, 7, 0); // Byte 3, Bit 7: Truncation. 0 = No, 1 = Yes.
-	setBit(answer + 4, 8, getBit(req + 4, 8)); // Byte 3, Bit 8: Recursion desired. Copy from Request.
-	setBit(answer + 5, 1, 1); // Byte 4, Bit 1: Recursion Available. 0 = No, 1 = Yes.
-	setBit(answer + 5, 2, 0); // Byte 4. Bit 2. Reserved. Must be 0.
-	setBit(answer + 5, 3, 0); // Byte 4. Bit 3. Reserved. Must be 0.
-	setBit(answer + 5, 4, 0); // Byte 4. Bit 4. Reserved. Must be 0.
+	// Byte 3: Bits 6-8; Byte 4, Bits 1-4
+	setBit(answer + 4, 6, 1); // Byte 3, Bit 6: Authoritative answer.
+	setBit(answer + 4, 7, 0); // Byte 3, Bit 7: Truncated message.
+	setBit(answer + 4, 8, 1); // Byte 3, Bit 8: Recursion desired.
+	setBit(answer + 5, 1, 1); // Byte 4, Bit 1: Recursion available.
+	setBit(answer + 5, 2, 0); // Byte 4. Bit 2: Reserved. Must be 0.
+	setBit(answer + 5, 3, 0); // Byte 4. Bit 3: Reserved. Must be 0.
+	setBit(answer + 5, 4, 0); // Byte 4. Bit 4: Reserved. Must be 0.
 
 /* Response code (4 bits)
 	0000 NoError
@@ -132,22 +133,22 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 		setBit(answer + 5, 8, 0); // Byte 4. Bit 8.
 	}
 
-	// Bytes   5-6: QDCOUNT. Number of entries in the question section.
+	// Bytes   5-6: QDCOUNT: Number of entries in the question section.
 	answer[6] = 0;
 	answer[7] = 1;
 
-	// Bytes 7-8: ANCOUNT. Number of resource records in the answer section.
+	// Bytes 7-8: ANCOUNT: Number of resource records in the answer section.
 	answer[8] = 0;
 	if (ip == 0)
 		answer[9] = 0;
 	else 
 		answer[9] = 1;
 
-	// Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section.
+	// Bytes 9-10: NSCOUNT: Number of name server resource records in the authority records section.
 	answer[10] = 0;
 	answer[11] = 0;
 
-	// Bytes 11-12: ARCOUNT. Number of resource records in the additional records section.
+	// Bytes 11-12: ARCOUNT: Number of resource records in the additional records section.
 	answer[12] = 0;
 	answer[13] = 0;
 
@@ -173,8 +174,8 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	}
 
 	// TCP DNS messages start with a 16 bit integer containing the length of the message (not counting the integer itself)
-	const int16_t msgLen = htons(totalLen - 2); // host to network byte order
-	memcpy(answer, &msgLen, 2);
+	answer[0] = 0;
+	answer[1] = totalLen - 2;
 
 	return totalLen;
 }
