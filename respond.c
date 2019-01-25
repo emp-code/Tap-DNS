@@ -42,7 +42,6 @@ int queryDns(const char* domain, const size_t domainLen) {
 	dnsAddr.sin_port = htons(TAPDNS_SERVER_PORT);
 	dnsAddr.sin_family = TAPDNS_ADDR_FAMILY;
 	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
-//	dnsAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
 	if (sockDns == -1) {perror("Creating socket for connecting to DNS server"); return 1;}
@@ -80,7 +79,7 @@ int respond(const int sock) {
 		return 0;
 	}
 
-	// Query the DNS server for a response with the client's request
+	// Query the DNS server for a response
 	const uint32_t ip = queryDns(domain, domainLen);
 
 	if (ip == 1) {

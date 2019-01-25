@@ -24,7 +24,7 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	setBit(rq + 4, 7, 0); // Byte 3, Bit 7. Truncation?
 	setBit(rq + 4, 8, 1); // Byte 3, Bit 8. Recursion desired?
 	setBit(rq + 5, 1, 0); // Byte 4, Bit 1. Recursion Available? N/A.
-	
+
 	setBit(rq + 5, 2, 0); // Byte 4. Bit 2. Reserved. Must be Zero.
 	setBit(rq + 5, 3, 0); // Byte 4. Bit 3. Reserved. Must be Zero.
 	setBit(rq + 5, 4, 0); // Byte 4. Bit 4. Reserved. Must be Zero.
@@ -38,7 +38,7 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	// Bytes 5-6: QDCOUNT. Number of entries in the question section.
 	rq[6] = 0;
 	rq[7] = 1;
-	
+
 	memset(rq +  8, 0, 2); // Bytes 7-8: ANCOUNT. Number of resource records in the answer section. N/A.
 	memset(rq + 10, 0, 2); // Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section. N/A.
 	memset(rq + 12, 0, 2); // Bytes 11-12: ARCOUNT. Number of resource records in the additional records section. N/A.
