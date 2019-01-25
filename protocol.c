@@ -11,7 +11,12 @@
 int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	memset(rq, 0, 99);
 
-	memcpy(rq + 2, domain, 2); // Bytes 1-2: Transaction ID. Set to anything.
+	// Bytes 1-2: Transaction ID.
+	FILE* fp = fopen("/dev/random", "rb");
+	rq[2] = fgetc(fp);
+	rq[3] = fgetc(fp);
+	fclose(fp);
+
 	setBit(rq + 4, 1, 0); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
 	// Byte 3, Bits 2-5 (4 bits): OPCODE (kind of query). 0000 = Standard query.
