@@ -68,9 +68,15 @@ int respond(const int sock) {
 
 	printf("DEBUG: Domain '%s' requested (length: %d bytes)\n", domain, reqLen);
 
+	if (dnsRequest_GetOpcode(req) != 0) {
+		puts("DEBUG: Not standard OPCODE");
+		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+		return 0;
+	}
+
 	if (isInvalidDomain(domain, domainLen)) {
 		puts("DEBUG: Invalid domain");
-		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+		dnsSendAnswer(sock, req, 0);
 		return 0;
 	}
 
