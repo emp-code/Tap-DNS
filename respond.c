@@ -72,6 +72,11 @@ int respond(const int sock) {
 
 	printf("DEBUG: Domain '%s' requested (length: %d bytes)\n", domain, reqLen);
 
+	if (strcmp(domain, "localhost") == 0 || memcmp(domain + strlen(domain) - 4, ".tap", 4) == 0) {
+		dnsSendAnswer(sock, req, 16777343); // 127.0.0.1
+		return 0;
+	}
+
 	// Query the DNS server for a response with the client's request
 	char res[TAPDNS_BUFLEN + 1];
 	const int resLen = queryDns(req, reqLen, res);
