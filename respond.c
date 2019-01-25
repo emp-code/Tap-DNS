@@ -22,22 +22,14 @@
 int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
 	char answer[100];
 	const int len = dnsCreateAnswer(answer, req, ip);
-
 	if (len < 0) return len;
 
 	const int ret = send(sockIn, answer, len, 0);
 
-	if (ret == len) {
-		// Message sent successfully
-		return 0;
-	} else if (ret < 0) {
-		// Error sending message
-		perror("Forwarding message");
-		return ret;
-	} else {
-		// Only sent part of the message
-		return ret;
-	}
+	if (ret < 0) {perror("Sending message"); return ret;}
+	if (ret != len) return ret;
+
+	return 0;
 }
 
 // Query the server
