@@ -20,15 +20,6 @@ printf("%zd\n", domainLen);
 	if (strstr(domain, ".-") != NULL) return 6;
 	// Note: -. is valid
 
-	if ((domainLen > 10) && (strcmp(domain + domainLen - 6, ".onion") == 0)) {
-		// Correct format for .onion domains
-		if((domainLen == 62 && (memcmp(domain + 56, ".onion", 6) == 0) && (strspn(domain, "abcdefghijklmnopqrstuvwxyz0123456789") == 56))
-		|| (domainLen == 22 && (memcmp(domain + 16, ".onion", 6) == 0) && (strspn(domain, "abcdefghijklmnopqrstuvwxyz0123456789") == 16))
-		) return 0;
-
-		return 7;
-	}
-
 //	if (getTldLocation(domain, NULL) < 0) return 8;
 
 	return 0;
