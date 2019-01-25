@@ -29,23 +29,24 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	setBit(answer + 5, 3, 0); // Byte 4. Bit 3. Reserved. Must be 0.
 	setBit(answer + 5, 4, 0); // Byte 4. Bit 4. Reserved. Must be 0.
 
-	// Response code (4 bits)
-	// 0000 NoError
-	// 0001 FormErr
-	// 0010 ServFail
-	// 0011 NXDomain
-	// 0100 NotImp
-	// 0101 Refused
-	// 0110 YXDomain
-	// 0111 YXRRSet
-	// 1000 NXRRSet
-	// 1001 NotAuth
-	// 1010 NotZone
-	// 1011 RESERVED11
-	// 1100 RESERVED12
-	// 1101 RESERVED13
-	// 1110 RESERVED14
-	// 1111 RESERVED15
+/* Response code (4 bits)
+	0000 NoError
+	0001 FormErr
+	0010 ServFail
+	0011 NXDomain
+	0100 NotImp
+	0101 Refused
+	0110 YXDomain
+	0111 YXRRSet
+	1000 NXRRSet
+	1001 NotAuth
+	1010 NotZone
+	1011 RESERVED11
+	1100 RESERVED12
+	1101 RESERVED13
+	1110 RESERVED14
+	1111 RESERVED15
+*/
 
 	if (ip == 0) { // IP 0.0.0.0: 0101 Refused
 		setBit(answer + 5, 5, 0); // Byte 4. Bit 5.
