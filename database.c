@@ -13,7 +13,7 @@ uint32_t dbGetIp(const char* domain) {
 
 	sqlite3_stmt* query;
 	ret = sqlite3_prepare_v2(db, "SELECT ip FROM dns WHERE domain = ?", 35, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: DNS: failed to prepare SQL query: %d\n", ret); sqlite3_close_v2(db); return -2;}
+	if (ret != SQLITE_OK) {printf("ERROR: Failed to prepare SQL query: %d\n", ret); sqlite3_close_v2(db); return 0;}
 
 	sqlite3_bind_text(query, 1, domain, -1, SQLITE_STATIC);
 	ret = sqlite3_step(query);

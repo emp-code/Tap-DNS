@@ -64,7 +64,7 @@ int respond(const int sock) {
 
 	// Get the domain that was requested
 	char domain[TAPDNS_MAXLEN_DOMAIN];
-	const int domainLen = dnsRequest_GetDomain(req, domain);
+	const size_t domainLen = dnsRequest_GetDomain(req, domain);
 
 	printf("DEBUG: Domain '%s' requested (length: %d bytes)\n", domain, reqLen);
 
