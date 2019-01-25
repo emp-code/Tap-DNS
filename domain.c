@@ -1,9 +1,9 @@
-#define TAPDNS_MAXLEN_DOMAIN 200
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+
+#include "domain.h"
 
 // Return zero if valid
 int isInvalidDomain(const char* domain, const size_t domainLen) {

@@ -1,10 +1,9 @@
 // Details of DNS server to use
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
-#define TAPDNS_SERVER_ADDR "1.1.1.1" // CloudFlare DNS
+#define TAPDNS_SERVER_ADDR "1.1.1.1" // Cloudflare DNS
 #define TAPDNS_SERVER_PORT 53
 
 #define TAPDNS_BUFLEN 512
-#define TAPDNS_MAXLEN_DOMAIN 128
 #define TAPDNS_OFFSET_TCP 2
 #define TAPDNS_OFFSET_UDP 0
 
