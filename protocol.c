@@ -67,7 +67,10 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 
 	// Bytes 7-8: ANCOUNT. Number of resource records in the answer section.
 	answer[8] = 0;
-	answer[9] = 1;
+	if (ip == 0)
+		answer[9] = 0;
+	else 
+		answer[9] = 1;
 
 	// Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section.
 	answer[10] = 0;
