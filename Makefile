@@ -9,7 +9,7 @@ main: main.c respond.h
 
 Includes/bit.o: Includes/bit.c
 domain.o: domain.c
-respond.o: respond.c protocol.h
+respond.o: respond.c domain.h protocol.h
 protocol.o: protocol.c
 
 .PHONY: clean
