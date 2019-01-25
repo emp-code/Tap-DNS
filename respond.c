@@ -32,24 +32,29 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
 	return 0;
 }
 
-// Query the server
-int queryDns(const char* req, const size_t reqLen, char* res) {
+int queryDns(const char* domain, const size_t domainLen) {
+	char req[100];
+	const int reqLen = dnsCreateRequest(req, domain, domainLen);
+
 	struct sockaddr_in dnsAddr;
 	const socklen_t addrlen = sizeof(dnsAddr);
 	memset(&dnsAddr, 0, addrlen);
 	dnsAddr.sin_port = htons(TAPDNS_SERVER_PORT);
 	dnsAddr.sin_family = TAPDNS_ADDR_FAMILY;
 	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
+//	dnsAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
 	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sockDns == -1) {perror("Creating socket for connecting to DNS server"); return -4;}
-	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("Connecting to DNS server"); return -5;}
+	if (sockDns == -1) {perror("Creating socket for connecting to DNS server"); return 1;}
+	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("Connecting to DNS server"); return 1;}
 
 	send(sockDns, req, reqLen, 0);
 
+	char res[TAPDNS_BUFLEN + 1];
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
-	return ret;
+
+	return dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, ret);
 }
 
 // Respond to a client's DNS request
@@ -76,12 +81,7 @@ int respond(const int sock) {
 	}
 
 	// Query the DNS server for a response with the client's request
-	char res[TAPDNS_BUFLEN + 1];
-	const int resLen = queryDns(req, reqLen, res);
-	if (resLen < 0) {printf("ERROR: Failed to receive response from DNS server: %d\n", resLen); return -1;}
-
-	// Get the IP address from the response
-	const uint32_t ip = dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, resLen);
+	const uint32_t ip = queryDns(domain, domainLen);
 
 	if (ip == 1) {
 		// Server-side error (such as non-existent domain)

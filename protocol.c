@@ -8,6 +8,77 @@
 
 #include "protocol.h"
 
+int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
+	memset(rq, 0, 99);
+
+	memcpy(rq + 2, domain, 2); // Bytes 1-2. Transaction ID. Set to anything.
+	setBit(rq + 4, 1, 0); // Byte 3, Bit 1. QR (Query/Response). 0 = Query, 1 = Response.
+
+	// Byte 3, Bits 2-5 (4 bits). OPCODE (kind of query). 0000 = Standard query.
+	setBit(rq + 4, 2, 0);
+	setBit(rq + 4, 3, 0);
+	setBit(rq + 4, 4, 0);
+	setBit(rq + 4, 5, 0);
+
+	setBit(rq + 4, 6, 0); // Byte 3, Bit 6. Authoritative Answer? N/A.
+	setBit(rq + 4, 7, 0); // Byte 3, Bit 7. Truncation?
+	setBit(rq + 4, 8, 1); // Byte 3, Bit 8. Recursion desired?
+	setBit(rq + 5, 1, 0); // Byte 4, Bit 1. Recursion Available? N/A.
+	
+	setBit(rq + 5, 2, 0); // Byte 4. Bit 2. Reserved. Must be Zero.
+	setBit(rq + 5, 3, 0); // Byte 4. Bit 3. Reserved. Must be Zero.
+	setBit(rq + 5, 4, 0); // Byte 4. Bit 4. Reserved. Must be Zero.
+
+	// Response code. N/A.
+	setBit(rq + 5, 5, 0); // Byte 4. Bit 5.
+	setBit(rq + 5, 6, 0); // Byte 4. Bit 6.
+	setBit(rq + 5, 7, 0); // Byte 4. Bit 7.
+	setBit(rq + 5, 8, 0); // Byte 4. Bit 8.
+
+	// Bytes 5-6: QDCOUNT. Number of entries in the question section.
+	rq[6] = 0;
+	rq[7] = 1;
+	
+	memset(rq +  8, 0, 2); // Bytes 7-8: ANCOUNT. Number of resource records in the answer section. N/A.
+	memset(rq + 10, 0, 2); // Bytes 9-10: NSCOUNT. Number of name server resource records in the authority records section. N/A.
+	memset(rq + 12, 0, 2); // Bytes 11-12: ARCOUNT. Number of resource records in the additional records section. N/A.
+
+	// Bytes 13+ Question
+	// Convert domain name to question format
+	char *dom = domain;
+	size_t offset = 0;
+	while(1) {
+		int b = 0;
+
+		char *dot = strchr(dom, '.');
+		if (dot == NULL) {
+			dot = domain + strlen(domain);
+			b = 1;
+		}
+
+		size_t sz = dot - dom;
+
+		rq[14 + offset] = sz;
+		memcpy(rq + 14 + offset + 1, dom, sz);
+		offset += sz + 1;
+
+		dom += sz + 1;
+		dot = strchr(dom, '.');
+
+		if (b == 1) break;
+	}
+
+	memcpy(rq + 14 + offset, "\0\0\1\0\1", 5); // 0: end of question; 01: Host (A) record; 01: Internet question class
+
+	size_t rqLen = 17 + offset;
+
+	// TCP DNS messages start with a 16 bit integer containing the length of the message (not counting the integer itself)
+	rq[0] = 0;
+	rq[1] = rqLen;
+
+	return rqLen + 2;
+}
+
 int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	memset(answer, 0, 99);
 
