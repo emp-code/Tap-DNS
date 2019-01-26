@@ -181,3 +181,28 @@ bool dbBlockedSubdomain(sqlite3* db, const char* domain, const size_t tldLoc) {
 
 	return false;
 }
+
+// Does the domain have a disallowed TLD? (e.g. anything.any-domain.EVIL)
+bool dbTldBlocked(sqlite3* db, const char* tld, const int blockType) {
+	sqlite3_stmt* query;
+	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM tld WHERE tld = ? AND type >= ?", 45, &query, NULL);
+	if (ret != SQLITE_OK) {
+		printf("ERROR: hasBadSuffix - Failed to prepare SQL query: %d\n", ret);
+		return true;
+	}
+
+	sqlite3_bind_text(query, 1, tld, -1, SQLITE_STATIC);
+	sqlite3_bind_int(query, 2, blockType);
+
+	ret = sqlite3_step(query);
+	sqlite3_finalize(query);
+
+	if (ret == SQLITE_DONE) return false;
+
+	if (ret != SQLITE_ROW) {
+		printf("ERROR: hasBadSuffix - Failed to execute SQL query: %d\n", ret);
+		return true;
+	}
+
+	return true;
+}
