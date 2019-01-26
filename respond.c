@@ -100,7 +100,7 @@ int respond(const int sock) {
 		puts("DEBUG: TLD not found for domain");
 		return 0;
 	}
-	
+
 	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
@@ -111,7 +111,6 @@ int respond(const int sock) {
 			return 0;
 		}
 	}
-
 
 	int ip = dbGetIp(db, domain, domainLen);
 
@@ -126,11 +125,16 @@ int respond(const int sock) {
 		if (ip == 1) {
 			// Server-side error (such as non-existent domain)
 			dnsSendAnswer(sock, req, 0);
+
 			puts("DEBUG: Server-side error");
+			sqlite3_close_v2(db);
 			return -2;
 		} else if (ip == 0) {
 			// Failed to parse the server's response
+			dnsSendAnswer(sock, req, 0);
+
 			puts("ERROR: Failed to parse the server's response");
+			sqlite3_close_v2(db);
 			return -3;
 		}
 
