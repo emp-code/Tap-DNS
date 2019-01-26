@@ -95,6 +95,12 @@ int respond(const int sock) {
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
 
 	const int tldLoc = getTldLocation(db, domain);
+	if (tldLoc < 0) {
+		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+		puts("DEBUG: TLD not found for domain");
+		return -5;
+	}
+	
 	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
