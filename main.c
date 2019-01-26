@@ -73,6 +73,11 @@ int acceptConnections_tcp() {
 }
 
 int main() {	
+	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+		perror(0);
+		return 1;
+	}
+
 	puts(">>> Tap:DNS - The Attenuating Proxy: Deadbolt Name Service");
 
 	acceptConnections_tcp();
