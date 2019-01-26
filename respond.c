@@ -12,6 +12,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sqlite3.h>
 
 #include "Includes/bit.h"
 
@@ -87,11 +88,15 @@ int respond(const int sock) {
 		return 0;
 	}
 
-	int ip = dbGetIp(domain, domainLen);
+	sqlite3* db;
+	int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
+	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
+
+	int ip = dbGetIp(db, domain, domainLen);
 
 	if (ip == 0) {
 		// IP does not exist in the database or there was an error getting it
-		
+
 		// Query the DNS server for a response
 		int ttl;
 		ip = queryDns(domain, domainLen, &ttl);
@@ -109,10 +114,12 @@ int respond(const int sock) {
 		}
 
 		// Successfully got response from the server, save it to the database
-		dbSetIp(domain, domainLen, ip, ttl);
+		dbSetIp(db, domain, domainLen, ip, ttl);
 	}
 
 	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip);
+
+	sqlite3_close_v2(db);
 	return 0;
 }
