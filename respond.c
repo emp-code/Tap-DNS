@@ -92,6 +92,9 @@ int respond(const int sock) {
 	int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
 
+	const int tldLoc = getTldLocation(db, domain);
+	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
+
 	int ip = dbGetIp(db, domain, domainLen);
 
 	if (ip == 0) {

@@ -53,6 +53,54 @@ int dbSetIp(sqlite3* db, const char* domain, const size_t lenDomain, const int i
 	return -4;
 }
 
+int getTldLocation(sqlite3* db, char* domain) {
+	char* testTld = domain;
+
+	while(1) {
+		testTld = strchr(testTld, '.');
+		if (testTld == NULL) return -5;
+		testTld++;
+
+		sqlite3_stmt* query;
+		int ret = sqlite3_prepare_v2(db, "SELECT tld FROM tld WHERE tld = ? OR tld = ? OR tld = ?", 55, &query, NULL);
+		if (ret != SQLITE_OK) {printf("ERROR: tld: failed to prepare SQL query: %d\n", ret); return -2;}
+
+		char testTldE[strlen(testTld) + 2];
+		char testTldA[strlen(testTld) + 3];
+		sprintf(testTldE, "!%s", testTld);
+		sprintf(testTldA, "*.%s", testTld);
+
+		sqlite3_bind_text(query, 1, testTld, -1, SQLITE_STATIC);
+		sqlite3_bind_text(query, 2, testTldE, -1, SQLITE_STATIC);
+		sqlite3_bind_text(query, 3, testTldA, -1, SQLITE_STATIC);
+
+		ret = sqlite3_step(query);
+		if (ret == SQLITE_DONE) {sqlite3_finalize(query); continue;}
+		if (ret != SQLITE_ROW) {printf("ERROR: tld: failed to execute SQL query: %d\n", ret); return -3;}
+
+		const size_t tldSize = sqlite3_column_bytes(query, 0);
+		char* foundTld = ((char*)sqlite3_column_text(query, 0));
+		const char foundType = *foundTld;
+
+		sqlite3_finalize(query);
+
+		if (foundType == '!') {
+			// Go forward to remove the leftmost label
+			return testTld - domain + tldSize - 1;
+		} else if (foundType == '*') {
+			// Go backward to include the previous label
+			testTld--;
+			while ((testTld != domain) && (*testTld != '.')) testTld--;
+			return testTld - domain;
+		} else {
+			// Return as is
+			return testTld - domain;
+		}
+	}
+
+	return -1;	
+}
+
 bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
 	sqlite3_stmt* query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst=? AND type=10", 45, &query, NULL);
