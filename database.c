@@ -138,6 +138,22 @@ bool dbDomainBlocked(sqlite3* db, const char* domain, const size_t len, const in
 	return true;
 }
 
+// Is this domain a subdomain of a blocked (sub)domain? (e.g. anything.at-all.EVIL.COM or anything.EVIL.DOMAIN.TLD)
+bool dbParentDomainBlocked(sqlite3* db, const char* domain, const int tldLoc, const int blockType) {
+	const char* tldBegin = domain + tldLoc; // Prevent treating the TLD as a domain
+
+	const char* dot = domain - 1; // Start with the full domain including all subdomains; -1 because there is no leading dot
+	while(1) {
+		dot++;
+		if (dot >= tldBegin) break; // No more subdomains to check
+
+		if (dbDomainBlocked(db, dot, strlen(dot), blockType)) return true; // A 'higher up' part is blocked -> block this subdomain as well
+		dot = strchr(dot, '.'); // Remove one subdomain
+	}
+
+	return false;
+}
+
 // Does the domain have a disallowed subdomain? (e.g. EVIL.any-domain.tld, including anything.EVIL.any-domain.tld)
 bool dbSubdomainBlocked(sqlite3* db, const char* domain, const size_t domainLen, const size_t tldLoc, const int blockType) {
 	sqlite3_stmt* query;
