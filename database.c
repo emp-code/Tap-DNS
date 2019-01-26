@@ -114,8 +114,9 @@ bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
 	sqlite3_finalize(query);
 
 	if (ret == SQLITE_ROW) return true;
-
 	if (ret != SQLITE_DONE) printf("ERROR: dbWhitelisted - Failed to execute SQL query: %d\n", ret);
+
+	// Either the domain is not whitelisted or there was an error -> treat as not whitelisted
 	return false;
 }
 
@@ -130,8 +131,8 @@ bool dbDomainBlocked(sqlite3* db, const char* domain, const size_t len, const in
 	ret = sqlite3_step(query);
 	sqlite3_finalize(query);
 
-	if (ret == SQLITE_ROW) return false;	
-	if (ret != SQLITE_DONE) printf("ERROR: dbDomainBlocked - Failed to execute SQL query: %d\n", ret);
+	if (ret == SQLITE_DONE) return false;
+	if (ret != SQLITE_ROW) printf("ERROR: dbDomainBlocked - Failed to execute SQL query: %d\n", ret);
 
 	// Either the domain is blocked or there was an error -> treat as blocked
 	return true;

@@ -7,6 +7,8 @@
 #define TAPDNS_OFFSET_TCP 2
 #define TAPDNS_OFFSET_UDP 0
 
+#define TAPDNS_TYPE_BLOCK1 30
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -94,6 +96,16 @@ int respond(const int sock) {
 
 	const int tldLoc = getTldLocation(db, domain);
 	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
+
+	if (!dbWhitelisted(db, domain, domainLen)) {
+		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK1)) {
+			dnsSendAnswer(sock, req, 0); // 0.0.0.0
+			puts("DEBUG: Domain blocked");
+			sqlite3_close_v2(db);
+			return 0;
+		}
+	}
+
 
 	int ip = dbGetIp(db, domain, domainLen);
 
