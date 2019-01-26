@@ -105,10 +105,12 @@ int respond(const int sock) {
 			puts("ERROR: Failed to parse the server's response");
 			return -3;
 		}
+
+		// Successfully got response from the server, save it to the database
+		dbSetIp(domain, domainLen, ip);
 	}
 
-	// Everything OK. Save the IP to the database and respond to the client
-	dbSetIp(domain, domainLen, ip);
+	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip);
 	return 0;
 }
