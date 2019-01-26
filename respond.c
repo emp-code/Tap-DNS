@@ -14,9 +14,11 @@
 #include <unistd.h>
 
 #include "Includes/bit.h"
+
+#include "database.h"
+#include "domain.h"
 #include "protocol.h"
 
-#include "domain.h"
 #include "respond.h"
 
 int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
@@ -85,21 +87,28 @@ int respond(const int sock) {
 		return 0;
 	}
 
-	// Query the DNS server for a response
-	const int ip = queryDns(domain, domainLen);
+	int ip = dbGetIp(domain, domainLen);
 
-	if (ip == 1) {
-		// Server-side error (such as non-existent domain)
-		dnsSendAnswer(sock, req, 0); // 0.0.0.0
-		puts("DEBUG: Server-side error");
-		return -2;
-	} else if (ip == 0) {
-		// Failed to parse the server's response
-		puts("ERROR: Failed to parse the server's response");
-		return -3;
+	if (ip == 0) {
+		// IP does not exist in the database or there was an error getting it
+		
+		// Query the DNS server for a response
+		ip = queryDns(domain, domainLen);
+
+		if (ip == 1) {
+			// Server-side error (such as non-existent domain)
+			dnsSendAnswer(sock, req, 0); // 0.0.0.0
+			puts("DEBUG: Server-side error");
+			return -2;
+		} else if (ip == 0) {
+			// Failed to parse the server's response
+			puts("ERROR: Failed to parse the server's response");
+			return -3;
+		}
 	}
 
-	// Everything OK, respond to our client
+	// Everything OK. Save the IP to the database and respond to the client
+	dbSetIp(domain, domainLen, ip);
 	dnsSendAnswer(sock, req, ip);
 	return 0;
 }
