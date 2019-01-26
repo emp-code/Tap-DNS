@@ -86,7 +86,7 @@ int respond(const int sock) {
 	}
 
 	// Query the DNS server for a response
-	const uint32_t ip = queryDns(domain, domainLen);
+	const int ip = queryDns(domain, domainLen);
 
 	if (ip == 1) {
 		// Server-side error (such as non-existent domain)

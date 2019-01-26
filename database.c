@@ -6,7 +6,7 @@
 
 #include "database.h"
 
-uint32_t dbGetIp(const char* domain, const size_t lenDomain) {
+int dbGetIp(const char* domain, const size_t lenDomain) {
 	sqlite3* db;
 	int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READONLY, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return 0;}
@@ -18,10 +18,10 @@ uint32_t dbGetIp(const char* domain, const size_t lenDomain) {
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
 	ret = sqlite3_step(query);
 
-	uint32_t result = 0;
+	int result = 0;
 
 	if (ret == SQLITE_ROW) {
-		result  = (uint32_t)sqlite3_column_int(query, 0);
+		result  = sqlite3_column_int(query, 0);
 	}
 
 	sqlite3_finalize(query);
@@ -29,7 +29,7 @@ uint32_t dbGetIp(const char* domain, const size_t lenDomain) {
 	return result;
 }
 
-int dbSetIp(const char* domain, const size_t lenDomain, const uint32_t ip) {
+int dbSetIp(const char* domain, const size_t lenDomain, const int ip) {
 	sqlite3* db;
 	sqlite3_stmt* query;
 	int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
