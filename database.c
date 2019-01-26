@@ -52,3 +52,20 @@ int dbSetIp(sqlite3* db, const char* domain, const size_t lenDomain, const int i
 	return -4;
 }
 
+bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
+	sqlite3_stmt* query;
+	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst=? AND type=10", 45, &query, NULL);
+	if (ret != SQLITE_OK) {
+		printf("ERROR: dbWhitelisted - Failed to prepare SQL query: %d\n", ret);
+		return false;
+	}
+
+	sqlite3_bind_text(query, 1, domain, len, SQLITE_STATIC);
+	ret = sqlite3_step(query);
+	sqlite3_finalize(query);
+
+	if (ret == SQLITE_ROW) return true;
+
+	if (ret != SQLITE_DONE) printf("ERROR: dbWhitelisted - Failed to execute SQL query: %d\n", ret);
+	return false;
+}
