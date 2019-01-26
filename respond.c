@@ -110,7 +110,14 @@ int respond(const int sock) {
 			sqlite3_close_v2(db);
 			return 0;
 		}
-		
+
+		if (dbSubdomainBlocked(db, domain, domainLen, tldLoc, TAPDNS_TYPE_BLOCK1)) {
+			dnsSendAnswer(sock, req, 0);
+			puts("DEBUG: Subdomain blocked");
+			sqlite3_close_v2(db);
+			return 0;
+		}
+
 		if (dbTldBlocked(db, domain + tldLoc, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0);
 			puts("DEBUG: TLD blocked");
