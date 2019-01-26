@@ -222,3 +222,42 @@ bool dbTldBlocked(sqlite3* db, const char* tld, const int blockType) {
 
 	return true;
 }
+
+// Does the domain have blocked keywords in it? (e.g. domain-of-EVIL.tld)
+bool dbKeywordBlocked(sqlite3* db, const char* domain, const int tldLoc, const int blockType) {
+	sqlite3_stmt* query;
+	int ret = sqlite3_prepare_v2(db, "SELECT keyword FROM keyword WHERE type >= ?", 44, &query, NULL);
+	if (ret != SQLITE_OK) {
+		printf("ERROR: dbKeywordBlocked - Failed to prepare SQL query: %d\n", ret);
+		return true;
+	}
+
+	sqlite3_bind_int(query, 1, blockType);
+
+	ret = sqlite3_step(query);
+	if (ret == SQLITE_DONE) {
+		// No keywords in database
+		sqlite3_finalize(query);
+		return false;
+	} else if (ret != SQLITE_ROW) {
+		printf("ERROR: dbKeywordBlocked - Failed to execute SQL query: %d\n", ret);
+		sqlite3_finalize(query);
+		return true;
+	}
+
+	while (ret == SQLITE_ROW) {
+		const char* kw = (char*)sqlite3_column_text(query, 0);
+
+		const char* match = strstr(domain, kw);
+		
+		if (match != NULL && (match - domain) < tldLoc) {
+			sqlite3_finalize(query);
+			return true;
+		}
+
+		ret = sqlite3_step(query);
+	}
+
+	sqlite3_finalize(query);
+	return false;
+}
