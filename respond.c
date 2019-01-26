@@ -109,7 +109,7 @@ int respond(const int sock) {
 		}
 
 		// Successfully got response from the server, save it to the database
-		dbSetIp(domain, domainLen, ip);
+		dbSetIp(domain, domainLen, ip, ttl);
 	}
 
 	// Everything OK, respond to the client
