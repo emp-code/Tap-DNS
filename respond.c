@@ -34,7 +34,7 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
 	return 0;
 }
 
-int queryDns(const char* domain, const size_t domainLen) {
+int queryDns(const char* domain, const size_t domainLen, int* ttl) {
 	char req[100];
 	const int reqLen = dnsCreateRequest(req, domain, domainLen);
 
@@ -55,7 +55,7 @@ int queryDns(const char* domain, const size_t domainLen) {
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
 
-	return dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, ret);
+	return dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, ret, ttl);
 }
 
 // Respond to a client's DNS request
@@ -93,7 +93,9 @@ int respond(const int sock) {
 		// IP does not exist in the database or there was an error getting it
 		
 		// Query the DNS server for a response
-		ip = queryDns(domain, domainLen);
+		int ttl;
+		ip = queryDns(domain, domainLen, &ttl);
+		printf("DEBUG: TTL=%d\n", ttl);
 
 		if (ip == 1) {
 			// Server-side error (such as non-existent domain)

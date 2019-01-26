@@ -232,22 +232,34 @@ int dnsResponse_GetResponseCode(const char* res) {
 	;
 }
 
-int dnsResponse_GetIp_get(const char* res, const int resLen) {
+int dnsResponse_GetIp_get(const char* res, const int resLen, int* ttl) {
+	// Search for answer block (RR, resource record) containing the IP
 	for (int i = 0; i < (resLen - 4); i++) {
-		if (memcmp(res + i, "\0\1\0\1\xc0\x0c\0\1\0\1", 10) == 0)
-			return *((int*)(res + i + 16));
+		if (memcmp(res + i, "\0\1\0\1\xc0\x0c\0\1\0\1", 10) == 0) {
+			// Get Time To Live (TTL)
+			int32_t recordTtl;
+			memcpy(&recordTtl, res + i + 10, 4);
+			*ttl = ntohl(recordTtl); // TTL is in network byte order
+			
+			// *(res + i + 14) should be 0
+			// *(res + i + 15) should be 4
+			// Meaning the next field (IP) is 4 bytes long
+
+			// Get IP
+			return *((int*)(res + i + 16)); // 10 + 4 (TTL) + 2 (Length)
+		}
 	}
 
 	return 0;
 }
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
-int dnsResponse_GetIp(const int offset, const char* res, const int resLen) {
+int dnsResponse_GetIp(const int offset, const char* res, const int resLen, int* ttl) {
 	if (dnsResponse_GetResponseCode(res + offset) != 0) return 1; // 0 = no error
 
 	uint16_t answerCount;
 	memcpy(&answerCount, res + 6 + offset, 2);
 	if (answerCount == 0) return 1; // Must have at least 1 answer.
 
-	return dnsResponse_GetIp_get(res, resLen);
+	return dnsResponse_GetIp_get(res, resLen, ttl);
 }
