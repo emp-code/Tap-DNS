@@ -69,3 +69,21 @@ bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
 	if (ret != SQLITE_DONE) printf("ERROR: dbWhitelisted - Failed to execute SQL query: %d\n", ret);
 	return false;
 }
+
+// Is this domain listed as blocked? (e.g. EVIL.COM)
+bool dbDomainBlocked(sqlite3* db, const char* domain, const size_t len, const int blockType) {
+	sqlite3_stmt* query;
+	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst = ? AND type >= ?", 49, &query, NULL);
+	if (ret != SQLITE_OK) {printf("ERROR: dbDomainBlocked - Failed to prepare SQL query: %d\n", ret); return true;}
+
+	sqlite3_bind_text(query, 1, domain, len, SQLITE_STATIC);
+	sqlite3_bind_int(query, 2, blockType);
+	ret = sqlite3_step(query);
+	sqlite3_finalize(query);
+
+	if (ret == SQLITE_ROW) return false;	
+	if (ret != SQLITE_DONE) printf("ERROR: dbDomainBlocked - Failed to execute SQL query: %d\n", ret);
+
+	// Either the domain is blocked or there was an error -> treat as blocked
+	return true;
+}
