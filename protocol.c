@@ -215,19 +215,12 @@ size_t dnsRequest_GetDomain(const char* req, char* holder) {
 }
 
 int dnsRequest_GetOpcode(const char* req) {
-	char code[4];
-	code[0] = getBit(req + 4, 2);
-	code[1] = getBit(req + 4, 3);
-	code[2] = getBit(req + 4, 4);
-	code[3] = getBit(req + 4, 5);
-
-	if (memcmp(code, "\0\0\0\0", 4) == 0) return 0; // Query [RFC 1035]
-	if (memcmp(code, "\0\0\0\1", 4) == 0) return 1; // OpCode Retired (previously IQUERY - No further assignment of this code available) [RFC 3425]
-	if (memcmp(code, "\0\0\1\0", 4) == 0) return 2; // Status [RFC 1035]
-	if (memcmp(code, "\0\0\1\1", 4) == 0) return 3; // reserved [IANA]
-	if (memcmp(code, "\0\1\0\0", 4) == 0) return 4; // Notify [RFC 1996]
-	if (memcmp(code, "\0\1\0\1", 4) == 0) return 5; // Update [RFC 2136]
-	else return 6; // 6-15 (0110-1111) available for assignment
+	return
+		getBit(req + 4, 2) * 8
+	+	getBit(req + 4, 3) * 4
+	+	getBit(req + 4, 4) * 2
+	+	getBit(req + 4, 5) * 1
+	;
 }
 
 int dnsResponse_GetIp_get(const char* res, const int resLen) {
