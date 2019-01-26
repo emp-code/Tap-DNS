@@ -9,11 +9,11 @@
 
 #define TAPDNS_TYPE_BLOCK1 30
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <sqlite3.h>
 
 #include "Includes/bit.h"
@@ -75,7 +75,7 @@ int respond(const int sock) {
 
 	if (dnsRequest_GetOpcode(req) != 0) {
 		puts("DEBUG: Not standard OPCODE");
-		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+		dnsSendAnswer(sock, req, 0);
 		return 0;
 	}
 
@@ -95,17 +95,17 @@ int respond(const int sock) {
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
 
 	const int tldLoc = getTldLocation(db, domain);
-	if (tldLoc < 0) {
-		dnsSendAnswer(sock, req, 0); // 0.0.0.0
+	if (tldLoc < 2) {
+		dnsSendAnswer(sock, req, 0);
 		puts("DEBUG: TLD not found for domain");
-		return -5;
+		return 0;
 	}
 	
 	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
 		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0); // 0.0.0.0
+			dnsSendAnswer(sock, req, 0);
 			puts("DEBUG: Domain blocked");
 			sqlite3_close_v2(db);
 			return 0;
@@ -125,7 +125,7 @@ int respond(const int sock) {
 
 		if (ip == 1) {
 			// Server-side error (such as non-existent domain)
-			dnsSendAnswer(sock, req, 0); // 0.0.0.0
+			dnsSendAnswer(sock, req, 0);
 			puts("DEBUG: Server-side error");
 			return -2;
 		} else if (ip == 0) {
