@@ -55,6 +55,7 @@ int acceptConnections_tcp() {
 			// Read the request from the client
 			char req[TAPDNS_BUFLEN + 1];
 			const int reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
+			if (reqLen < 0) {perror("Failed to receive a connection"); close(newSock); continue;}
 
 			respond(newSock, req, reqLen, NULL, 0);
 
