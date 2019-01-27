@@ -29,13 +29,13 @@ int initSocket(const int sock) {
 	return 0;
 }
 
-int acceptConnections_tcp() {
+void acceptConnections_tcp() {
 	// Create a TCP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {puts("ERROR: Opening socket failed"); return 1;}
+	if (sock < 0) {puts("ERROR: Opening socket failed"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return 1;}
+	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return;}
 
 	struct sockaddr_in cliAddr;
 	socklen_t cliLen = sizeof(cliAddr);
@@ -43,10 +43,10 @@ int acceptConnections_tcp() {
 	// Accept connections on the socket
 	while(1) {
 		const int newSock = accept(sock, (struct sockaddr*)&cliAddr, &cliLen);
-		if (newSock < 0) {puts("ERROR: Failed to create socket for accepting connection"); return -1;}
+		if (newSock < 0) {puts("ERROR: Failed to create socket for accepting connection"); return;}
 
 		const int pid = fork();
-		if (pid < 0) {puts("ERROR: Failed to fork"); return -2;}
+		if (pid < 0) {puts("ERROR: Failed to fork"); return;}
 
 		if (pid == 0) {
 			// Child thread: Respond to the client
@@ -55,29 +55,28 @@ int acceptConnections_tcp() {
 			// Read the request from the client
 			char req[TAPDNS_BUFLEN + 1];
 			const int reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
-			if (reqLen < 0) {perror("Failed to receive a connection"); close(newSock); continue;}
+			if (reqLen < 0) {perror("Failed to receive a connection"); close(newSock); return;}
 
 			respond(newSock, req, reqLen, NULL, 0);
 
 			close(newSock);
-			return 0;
+			return;
 		}
-		
+
 		// Parent thread: Continue loop to accept new clients
 		close(newSock);
 	}
 
 	close(sock);
-	return 0;
 }
 
-int acceptConnections_udp() {
+void acceptConnections_udp() {
 	// Create a UDP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {puts("ERROR: Opening socket failed"); return 1;}
+	if (sock < 0) {puts("ERROR: Opening socket failed"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return 1;}
+	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return;}
 
 	// Accept connections on the socket
 	while(1) {
@@ -89,18 +88,18 @@ int acceptConnections_udp() {
 		if (reqLen < 0) {perror("Failed to receive a connection"); continue;}
 
 		const int pid = fork();
-		if (pid < 0) {puts("ERROR: Failed to fork connection"); return 1;}
+		if (pid < 0) {puts("ERROR: Failed to fork connection"); return;}
 		else if (pid != 0) continue; // 0 = Child
 
 		respond(sock, req, reqLen, (struct sockaddr*)&addrIn, addrlen);
-		return 0;
+		return;
 	}
 
 	close(sock);
-	return 0;
+	return;
 }
 
-int main() {	
+int main() {
 	if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
 		perror(0);
 		return 1;
