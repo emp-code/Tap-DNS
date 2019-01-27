@@ -87,10 +87,10 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	return rqLen + 2;
 }
 
-int dnsCreateAnswer(char* answer, const char* req, const int ip) {
+int dnsCreateAnswer(char* answer, const char* req, const int ip, const size_t offset) {
 	memset(answer, 0, 99);
 
-	memcpy(answer + 2, req + 2, 2); // Bytes 1-2: Transaction ID. Copy from Request.
+	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
@@ -160,9 +160,9 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 	answer[13] = 0;
 
 	// Bytes 13+ Question. Copy from Request.
-	const size_t questionLen = strlen(req + 14) + 5;
+	const size_t questionLen = strlen(req + 12 + offset) + 5;
 	if (questionLen + 30 > 99) return -8;
-	memcpy(answer + 14, req + 14, questionLen);
+	memcpy(answer + 14, req + 12 + offset, questionLen);
 
 	size_t totalLen = 14 + questionLen;
 
@@ -188,15 +188,14 @@ int dnsCreateAnswer(char* answer, const char* req, const int ip) {
 }
 
 // Get the requested domain in the request
-size_t dnsRequest_GetDomain(const char* req, char* holder) {
-	// Values 'should' be 12/13 instead of 14/15, but with TCP there's 2 extra bytes in the beginning
-	size_t domainLen = req[14];
+size_t dnsRequest_GetDomain(const char* req, char* holder, const size_t offset) {
+	size_t domainLen = req[12 + offset];
 
 	// Convert domain to lowercase
 	for (size_t i = 0; i < domainLen; i++)
-		holder[i] = tolower(req[15 + i]);
+		holder[i] = tolower(req[13 + offset + i]);
 
-	size_t startLen = 15 + domainLen;
+	size_t startLen = 13 + offset + domainLen;
 	while(1) {
 		const size_t addLen = req[startLen];
 		if (addLen == 0) break;

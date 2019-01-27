@@ -24,12 +24,15 @@
 
 #include "respond.h"
 
-int dnsSendAnswer(const int sockIn, const char* req, const int ip) {
+int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct sockaddr* addr, socklen_t addrLen) {
 	char answer[100];
-	const int len = dnsCreateAnswer(answer, req, ip);
+	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
 	if (len < 0) return len;
 
-	const int ret = send(sockIn, answer, len, 0);
+	const int ret = (addr == NULL) ?
+		send(sockIn, answer, len, 0)
+	:
+		sendto(sockIn, answer + 2, len - 2, 0, addr, addrLen);
 
 	if (ret < 0) {perror("Sending message"); return ret;}
 	if (ret != len) return ret;
@@ -62,31 +65,27 @@ int queryDns(const char* domain, const size_t domainLen, int* ttl) {
 }
 
 // Respond to a client's DNS request
-int respond(const int sock) {
-	// Read the request from the client
-	char req[TAPDNS_BUFLEN + 1];
-	const int reqLen = recv(sock, req, TAPDNS_BUFLEN, 0);
-
+int respond(const int sock, const char* req, const size_t reqLen, const struct sockaddr* addr, socklen_t addrLen) {
 	// Get the domain that was requested
 	char domain[TAPDNS_MAXLEN_DOMAIN];
-	const size_t domainLen = dnsRequest_GetDomain(req, domain);
+	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
 
-	printf("DEBUG: Domain '%s' requested (length: %d bytes)\n", domain, reqLen);
+	printf("DEBUG: Domain '%s' requested (length: %zd bytes)\n", domain, reqLen);
 
 	if (dnsRequest_GetOpcode(req) != 0) {
 		puts("DEBUG: Not standard OPCODE");
-		dnsSendAnswer(sock, req, 0);
+		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return 0;
 	}
 
 	if (isInvalidDomain(domain, domainLen)) {
 		puts("DEBUG: Invalid domain");
-		dnsSendAnswer(sock, req, 0);
+		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return 0;
 	}
 
 	if (strcmp(domain, "localhost") == 0 || memcmp(domain + domainLen - 4, ".tap", 4) == 0) {
-		dnsSendAnswer(sock, req, 16777343); // 127.0.0.1
+		dnsSendAnswer(sock, req, 16777343, addr, addrLen); // 127.0.0.1
 		return 0;
 	}
 
@@ -96,7 +95,7 @@ int respond(const int sock) {
 
 	const int tldLoc = getTldLocation(db, domain);
 	if (tldLoc < 2) {
-		dnsSendAnswer(sock, req, 0);
+		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		puts("DEBUG: TLD not found for domain");
 		return 0;
 	}
@@ -105,35 +104,35 @@ int respond(const int sock) {
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
 		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			puts("DEBUG: Domain blocked");
 			sqlite3_close_v2(db);
 			return 0;
 		}
 
 		if (dbParentDomainBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			puts("DEBUG: Domain blocked");
 			sqlite3_close_v2(db);
 			return 0;
 		}
 
 		if (dbSubdomainBlocked(db, domain, domainLen, tldLoc, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			puts("DEBUG: Subdomain blocked");
 			sqlite3_close_v2(db);
 			return 0;
 		}
 
 		if (dbTldBlocked(db, domain + tldLoc, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			puts("DEBUG: TLD blocked");
 			sqlite3_close_v2(db);
 			return 0;
 		}
 		
 		if (dbKeywordBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			puts("DEBUG: Keyword blocked");
 			sqlite3_close_v2(db);
 			return 0;
@@ -152,14 +151,14 @@ int respond(const int sock) {
 
 		if (ip == 1) {
 			// Server-side error (such as non-existent domain)
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
 			puts("DEBUG: Server-side error");
 			sqlite3_close_v2(db);
 			return -2;
 		} else if (ip == 0) {
 			// Failed to parse the server's response
-			dnsSendAnswer(sock, req, 0);
+			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
 			puts("ERROR: Failed to parse the server's response");
 			sqlite3_close_v2(db);
@@ -171,7 +170,7 @@ int respond(const int sock) {
 	}
 
 	// Everything OK, respond to the client
-	dnsSendAnswer(sock, req, ip);
+	dnsSendAnswer(sock, req, ip, addr, addrLen);
 
 	sqlite3_close_v2(db);
 	return 0;
