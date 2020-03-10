@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/random.h>
 #include <ctype.h>
 #include <arpa/inet.h>
 
@@ -12,12 +13,7 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	memset(rq, 0, 99);
 
 	// Bytes 1-2: Transaction ID.
-	FILE* fp = fopen("/dev/random", "rb");
-	if (fp != NULL) {
-		rq[2] = fgetc(fp);
-		rq[3] = fgetc(fp);
-		fclose(fp);
-	}
+	getrandom(rq + 2, 2, 0);
 
 	setBit(rq + 4, 1, 0); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
