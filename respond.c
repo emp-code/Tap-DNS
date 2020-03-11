@@ -16,8 +16,6 @@
 #include <arpa/inet.h>
 #include <sqlite3.h>
 
-#include "Includes/bit.h"
-
 #include "database.h"
 #include "domain.h"
 #include "protocol.h"
