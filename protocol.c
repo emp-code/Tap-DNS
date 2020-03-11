@@ -230,6 +230,7 @@ int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, u
 
 		if (pointer || lenLabel == 0) {
 			if (!pointer) offset++;
+			pointer = false;
 
 			uint16_t lenRecord;
 			memcpy((unsigned char*)&lenRecord + 0, rr + offset + 9, 1);
