@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -51,25 +52,25 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	// Convert domain name to question format
 	char *dom = domain;
 	size_t offset = 0;
+
 	while(1) {
-		int b = 0;
+		bool final = false;
 
 		char *dot = strchr(dom, '.');
 		if (dot == NULL) {
 			dot = domain + strlen(domain);
-			b = 1;
+			final = true;
 		}
 
 		size_t sz = dot - dom;
 
 		rq[14 + offset] = sz;
 		memcpy(rq + 14 + offset + 1, dom, sz);
+
 		offset += sz + 1;
-
 		dom += sz + 1;
-		dot = strchr(dom, '.');
 
-		if (b == 1) break;
+		if (final) break;
 	}
 
 	memcpy(rq + 14 + offset, "\0\0\1\0\1", 5); // 0: end of question; 01: Host (A) record; 01: Internet question class
