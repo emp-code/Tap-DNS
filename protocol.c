@@ -10,9 +10,12 @@
 
 #include "protocol.h"
 
+static unsigned char id[2];
+
 int dnsCreateRequest(unsigned char * const rq, const char * const domain, const size_t domainLen) {
 	// Bytes 1-2: Transaction ID.
-	getrandom(rq + 2, 2, 0);
+	getrandom(id, 2, 0);
+	memcpy(rq + 2, id, 2);
 
 	setBit(rq + 4, 1, 0); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
 
@@ -237,6 +240,8 @@ int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const 
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
 int dnsResponse_GetIp(const char * const res, const int resLen, int * const ttl) {
+	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
+
 	if (dnsResponse_GetResponseCode(res + 2) != 0) return 1; // 0 = no error
 
 	uint16_t answerCount;
