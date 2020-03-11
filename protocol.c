@@ -11,8 +11,12 @@
 #include "protocol.h"
 
 static unsigned char id[2];
+unsigned char question[256];
+size_t lenQuestion;
 
 int dnsCreateRequest(unsigned char * const rq, const char * const domain, const size_t domainLen) {
+	lenQuestion = 0;
+
 	// Bytes 1-2: Transaction ID.
 	getrandom(id, 2, 0);
 	memcpy(rq + 2, id, 2);
@@ -52,7 +56,6 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain, const 
 
 	// Convert domain name to question format
 	const char *dom = domain;
-	size_t offset = 0;
 
 	while(1) {
 		bool final = false;
@@ -65,24 +68,25 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain, const 
 
 		size_t sz = dot - dom;
 
-		rq[14 + offset] = sz;
-		memcpy(rq + 14 + offset + 1, dom, sz);
+		question[lenQuestion] = sz;
+		memcpy(question + lenQuestion + 1, dom, sz);
 
-		offset += sz + 1;
+		lenQuestion += sz + 1;
 		dom += sz + 1;
 
 		if (final) break;
 	}
 
-	memcpy(rq + 14 + offset, "\0\0\1\0\1", 5); // 0: end of question; 01: Host (A) record; 01: Internet question class
+	memcpy(question + lenQuestion, "\0\0\1\0\1", 5); // 0: end of question; 01: Host (A) record; 01: Internet question class
+	lenQuestion += 5;
 
-	size_t rqLen = 17 + offset;
+	memcpy(rq + 14, question, lenQuestion);
 
 	// TCP DNS messages start with a 16 bit integer containing the length of the message (not counting the integer itself)
 	rq[0] = 0;
-	rq[1] = rqLen;
+	rq[1] = 17 + lenQuestion;
 
-	return rqLen + 2;
+	return 19 + lenQuestion;
 }
 
 int dnsCreateAnswer(unsigned char * const answer, const char * const req, const int ip, const size_t offset) {
@@ -241,6 +245,7 @@ int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
 int dnsResponse_GetIp(const char * const res, const int resLen, int * const ttl) {
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
+	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
 
 	if (dnsResponse_GetResponseCode(res + 2) != 0) return 1; // 0 = no error
 
