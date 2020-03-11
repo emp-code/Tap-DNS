@@ -37,12 +37,9 @@ void acceptConnections_tcp() {
 	// Init the socket
 	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return;}
 
-	struct sockaddr_in cliAddr;
-	socklen_t cliLen = sizeof(cliAddr);
-
 	// Accept connections on the socket
 	while(1) {
-		const int newSock = accept(sock, (struct sockaddr*)&cliAddr, &cliLen);
+		const int newSock = accept(sock, NULL, NULL);
 		if (newSock < 0) {puts("ERROR: Failed to create socket for accepting connection"); return;}
 
 		const int pid = fork();
