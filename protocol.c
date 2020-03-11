@@ -181,7 +181,7 @@ int dnsCreateAnswer(unsigned char * const answer, const char * const req, const 
 }
 
 // Get the requested domain in the request
-size_t dnsRequest_GetDomain(const char* req, char* holder, const size_t offset) {
+size_t dnsRequest_GetDomain(const char * const req, char * const holder, const size_t offset) {
 	size_t domainLen = req[12 + offset];
 
 	// Convert domain to lowercase

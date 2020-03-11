@@ -8,8 +8,8 @@
 
 #include "database.h"
 
-int dbGetIp(sqlite3* db, const char* domain, const size_t lenDomain) {
-	sqlite3_stmt* query;
+int dbGetIp(sqlite3 *db, const char * const domain, const size_t lenDomain) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT ip FROM dns WHERE domain = ? AND expire > STRFTIME('%s', 'NOW')", 70, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to prepare SQL query: %d\n", ret); sqlite3_close_v2(db); return 0;}
 
@@ -22,8 +22,8 @@ int dbGetIp(sqlite3* db, const char* domain, const size_t lenDomain) {
 	return result;
 }
 
-int dbSetIp(sqlite3* db, const char* domain, const size_t lenDomain, const int ip, const int ttl) {
-	sqlite3_stmt* query;
+int dbSetIp(sqlite3 *db, const char * const domain, const size_t lenDomain, const int ip, const int ttl) {
+	sqlite3_stmt *query;
 
 	// Try insert
 	int ret = sqlite3_prepare_v2(db, "INSERT INTO dns (domain, ip, expire) VALUES (?, ?, STRFTIME('%s', 'NOW') + ?)", 77, &query, NULL);
@@ -53,15 +53,15 @@ int dbSetIp(sqlite3* db, const char* domain, const size_t lenDomain, const int i
 	return -4;
 }
 
-int getTldLocation(sqlite3* db, char* domain) {
-	char* testTld = domain;
+int getTldLocation(sqlite3 *db, char * const domain) {
+	const char *testTld = domain;
 
 	while(1) {
 		testTld = strchr(testTld, '.');
 		if (testTld == NULL) return -5;
 		testTld++;
 
-		sqlite3_stmt* query;
+		sqlite3_stmt *query;
 		int ret = sqlite3_prepare_v2(db, "SELECT tld FROM tld WHERE tld = ? OR tld = ? OR tld = ?", 55, &query, NULL);
 		if (ret != SQLITE_OK) {printf("ERROR: tld: failed to prepare SQL query: %d\n", ret); return -2;}
 
@@ -79,7 +79,7 @@ int getTldLocation(sqlite3* db, char* domain) {
 		if (ret != SQLITE_ROW) {printf("ERROR: tld: failed to execute SQL query: %d\n", ret); return -3;}
 
 		const size_t tldSize = sqlite3_column_bytes(query, 0);
-		char* foundTld = ((char*)sqlite3_column_text(query, 0));
+		const char * const foundTld = ((char*)sqlite3_column_text(query, 0));
 		const char foundType = *foundTld;
 
 		sqlite3_finalize(query);
@@ -101,8 +101,8 @@ int getTldLocation(sqlite3* db, char* domain) {
 	return -1;
 }
 
-bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
-	sqlite3_stmt* query;
+bool dbWhitelisted(sqlite3 *db, const char * const domain, const size_t len) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst=? AND type=10", 45, &query, NULL);
 	if (ret != SQLITE_OK) {
 		printf("ERROR: dbWhitelisted - Failed to prepare SQL query: %d\n", ret);
@@ -121,8 +121,8 @@ bool dbWhitelisted(sqlite3* db, const char* domain, const size_t len) {
 }
 
 // Is this domain listed as blocked? (e.g. EVIL.COM)
-bool dbDomainBlocked(sqlite3* db, const char* domain, const size_t len, const int blockType) {
-	sqlite3_stmt* query;
+bool dbDomainBlocked(sqlite3 *db, const char * const domain, const size_t len, const int blockType) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst = ? AND type >= ?", 49, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: dbDomainBlocked - Failed to prepare SQL query: %d\n", ret); return true;}
 
@@ -139,10 +139,10 @@ bool dbDomainBlocked(sqlite3* db, const char* domain, const size_t len, const in
 }
 
 // Is this domain a subdomain of a blocked (sub)domain? (e.g. anything.at-all.EVIL.COM or anything.EVIL.DOMAIN.TLD)
-bool dbParentDomainBlocked(sqlite3* db, const char* domain, const int tldLoc, const int blockType) {
-	const char* tldBegin = domain + tldLoc; // Prevent treating the TLD as a domain
+bool dbParentDomainBlocked(sqlite3 *db, const char * const domain, const int tldLoc, const int blockType) {
+	const char * const tldBegin = domain + tldLoc; // Prevent treating the TLD as a domain
 
-	const char* dot = domain - 1; // Start with the full domain including all subdomains; -1 because there is no leading dot
+	const char *dot = domain - 1; // Start with the full domain including all subdomains; -1 because there is no leading dot
 	while(1) {
 		dot++;
 		if (dot >= tldBegin) break; // No more subdomains to check
@@ -155,8 +155,8 @@ bool dbParentDomainBlocked(sqlite3* db, const char* domain, const int tldLoc, co
 }
 
 // Does the domain have a disallowed subdomain? (e.g. EVIL.any-domain.tld, including anything.EVIL.any-domain.tld)
-bool dbSubdomainBlocked(sqlite3* db, const char* domain, const size_t domainLen, const size_t tldLoc, const int blockType) {
-	sqlite3_stmt* query;
+bool dbSubdomainBlocked(sqlite3 *db, const char * const domain, const size_t domainLen, const size_t tldLoc, const int blockType) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT sub FROM subdom WHERE type >= ?", 38, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: dbBlockedSubdomain - Failed to prepare SQL query: %d\n", ret); return true;}
 
@@ -174,7 +174,7 @@ bool dbSubdomainBlocked(sqlite3* db, const char* domain, const size_t domainLen,
 	}
 
 	while (ret == SQLITE_ROW) {
-		const char* sub = (char*)sqlite3_column_text(query, 0);
+		const char * const sub = (char*)sqlite3_column_text(query, 0);
 		const size_t subLen = sqlite3_column_bytes(query, 0);
 
 		if ((subLen + 3) > domainLen) {
@@ -184,7 +184,7 @@ bool dbSubdomainBlocked(sqlite3* db, const char* domain, const size_t domainLen,
 
 		char needle[subLen + 3];
 		sprintf(needle, ".%s.", sub);
-		const char* found = strstr(domain, needle);
+		const char * const found = strstr(domain, needle);
 
 		if ((memcmp(domain, needle + 1, subLen + 1) == 0) || (found != NULL && tldLoc != (found - domain + 2 + subLen))) {
 			sqlite3_finalize(query);
@@ -199,8 +199,8 @@ bool dbSubdomainBlocked(sqlite3* db, const char* domain, const size_t domainLen,
 }
 
 // Does the domain have a disallowed TLD? (e.g. anything.any-domain.EVIL)
-bool dbTldBlocked(sqlite3* db, const char* tld, const int blockType) {
-	sqlite3_stmt* query;
+bool dbTldBlocked(sqlite3 *db, const char * const tld, const int blockType) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM tld WHERE tld = ? AND type >= ?", 45, &query, NULL);
 	if (ret != SQLITE_OK) {
 		printf("ERROR: hasBadSuffix - Failed to prepare SQL query: %d\n", ret);
@@ -224,8 +224,8 @@ bool dbTldBlocked(sqlite3* db, const char* tld, const int blockType) {
 }
 
 // Does the domain have blocked keywords in it? (e.g. domain-of-EVIL.tld)
-bool dbKeywordBlocked(sqlite3* db, const char* domain, const int tldLoc, const int blockType) {
-	sqlite3_stmt* query;
+bool dbKeywordBlocked(sqlite3 *db, const char * const domain, const int tldLoc, const int blockType) {
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT keyword FROM keyword WHERE type >= ?", 44, &query, NULL);
 	if (ret != SQLITE_OK) {
 		printf("ERROR: dbKeywordBlocked - Failed to prepare SQL query: %d\n", ret);
@@ -246,9 +246,9 @@ bool dbKeywordBlocked(sqlite3* db, const char* domain, const int tldLoc, const i
 	}
 
 	while (ret == SQLITE_ROW) {
-		const char* kw = (char*)sqlite3_column_text(query, 0);
+		const char * const kw = (char*)sqlite3_column_text(query, 0);
 
-		const char* match = strstr(domain, kw);
+		const char * const match = strstr(domain, kw);
 		
 		if (match != NULL && (match - domain) < tldLoc) {
 			sqlite3_finalize(query);

@@ -22,7 +22,7 @@
 
 #include "respond.h"
 
-int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct sockaddr* addr, socklen_t addrLen) {
+int dnsSendAnswer(const int sockIn, const char *req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
 	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
@@ -36,7 +36,7 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct 
 	return (ret == len) ? 0 : -1;
 }
 
-int queryDns(const char* domain, const size_t domainLen, int* ttl) {
+int queryDns(const char * const domain, const size_t domainLen, int * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
 	const int reqLen = dnsCreateRequest(req, domain, domainLen);
@@ -62,7 +62,7 @@ int queryDns(const char* domain, const size_t domainLen, int* ttl) {
 }
 
 // Respond to a client's DNS request
-int respond(const int sock, const char* req, const size_t reqLen, const struct sockaddr* addr, socklen_t addrLen) {
+int respond(const int sock, const char *req, const size_t reqLen, const struct sockaddr *addr, socklen_t addrLen) {
 	// Get the domain that was requested
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
@@ -86,8 +86,8 @@ int respond(const int sock, const char* req, const size_t reqLen, const struct s
 		return 0;
 	}
 
-	sqlite3* db;
-	int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
+	sqlite3 *db;
+	const int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
 
 	const int tldLoc = getTldLocation(db, domain);
