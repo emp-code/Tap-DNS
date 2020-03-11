@@ -168,12 +168,12 @@ int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const re
 
 	if (ip != 0) {
 		const char rr[] = {
-			'\xc0', '\x0c', // Name (pointer)
-			'\0', '\1', // Type A
-			'\0', '\1', // Class Internet
-			'\0', '\0', '\0', '\0', // TTL: 0
-			'\0', '\4', // 4 Bytes (IP Address)
-		'\0'};
+			192, 12, // Name (pointer)
+			0, 1, // Type A
+			0, 1, // Class Internet
+			0, 0, 0, 0, // TTL: 0
+			0, 4, // 4 Bytes (IP Address)
+		0};
 
 		memcpy(answer + totalLen, rr, 12);
 		memcpy(answer + totalLen + 12, &ip, 4);
