@@ -23,6 +23,7 @@ int initSocket(const int sock) {
 	servAddr.sin_port = htons(TAPDNS_PORT_INTERNAL);
 
 	const int ret = bind(sock, (struct sockaddr*)&servAddr, sizeof(servAddr));
+
 	if (ret < 0) return ret;
 
 	listen(sock, 25); // socket, backlog (# of connections to keep in queue)
@@ -32,10 +33,10 @@ int initSocket(const int sock) {
 void acceptConnections_tcp() {
 	// Create a TCP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {puts("ERROR: Failed opening socket"); return;}
+	if (sock < 0) {puts("ERROR: Failed opening TCP socket"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Failed binding socket"); return;}
+	if (initSocket(sock) != 0) {puts("ERROR: Failed binding TCP socket"); return;}
 
 	// Accept connections on the socket
 	while(1) {
@@ -70,10 +71,10 @@ void acceptConnections_tcp() {
 void acceptConnections_udp() {
 	// Create a UDP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {puts("ERROR: Failed opening socket"); return;}
+	if (sock < 0) {puts("ERROR: Failed opening UDP socket"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Failed binding socket"); return;}
+	if (initSocket(sock) != 0) {puts("ERROR: Failed binding UDP socket"); return;}
 
 	// Accept connections on the socket
 	while(1) {
