@@ -26,17 +26,14 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct 
 	unsigned char answer[100];
 	bzero(answer, 100);
 	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
-	if (len < 0) return len;
+	if (len < 1) return len;
 
 	const int ret = (addr == NULL) ?
 		send(sockIn, answer, len, 0)
 	:
 		sendto(sockIn, answer + 2, len - 2, 0, addr, addrLen);
 
-	if (ret < 0) {perror("Sending message"); return ret;}
-	if (ret != len) return ret;
-
-	return 0;
+	return (ret == len) ? 0 : -1;
 }
 
 int queryDns(const char* domain, const size_t domainLen, int* ttl) {
@@ -52,7 +49,7 @@ int queryDns(const char* domain, const size_t domainLen, int* ttl) {
 	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
 
 	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sockDns == -1) {perror("Creating socket for connecting to DNS server"); return 1;}
+	if (sockDns != 0) {perror("Creating socket for connecting to DNS server"); return 1;}
 	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("Connecting to DNS server"); return 1;}
 
 	send(sockDns, req, reqLen, 0);
@@ -73,7 +70,7 @@ int respond(const int sock, const char* req, const size_t reqLen, const struct s
 	printf("DEBUG: Domain '%s' requested (length: %zd bytes)\n", domain, reqLen);
 
 	if (dnsRequest_GetOpcode(req) != 0) {
-		puts("DEBUG: Not standard OPCODE");
+		puts("DEBUG: Non-standard OPCODE");
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return 0;
 	}
