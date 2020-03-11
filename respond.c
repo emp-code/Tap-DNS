@@ -57,6 +57,7 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 	unsigned char res[TAPDNS_BUFLEN + 1];
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
+	if (ret < 1) return 0;
 
 	return dnsResponse_GetIp(res, ret, ttl);
 }
