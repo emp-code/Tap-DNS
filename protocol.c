@@ -254,8 +254,9 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	if (res[12] != 0 || res[13] != 0) puts("WARNING: Invalid addit. count");
 
 	uint16_t answerCount;
-	memcpy(&answerCount, res + 8, 2);
-	if (answerCount == 0) return 1; // Must have at least 1 answer.
+	memcpy((unsigned char*)&answerCount + 0, res + 9, 1);
+	memcpy((unsigned char*)&answerCount + 1, res + 8, 1);
+	if (answerCount < 1) return 1;
 
 	return dnsResponse_GetIp_get(res, resLen, ttl);
 }
