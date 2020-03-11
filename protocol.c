@@ -10,7 +10,7 @@
 
 #include "protocol.h"
 
-int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
+int dnsCreateRequest(char * const rq, const char * const domain, const size_t domainLen) {
 	memset(rq, 0, 99);
 
 	// Bytes 1-2: Transaction ID.
@@ -50,13 +50,13 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	// Bytes 13+: Question section
 
 	// Convert domain name to question format
-	char *dom = domain;
+	const char *dom = domain;
 	size_t offset = 0;
 
 	while(1) {
 		bool final = false;
 
-		char *dot = strchr(dom, '.');
+		const char *dot = strchr(dom, '.');
 		if (dot == NULL) {
 			dot = domain + strlen(domain);
 			final = true;
@@ -84,7 +84,7 @@ int dnsCreateRequest(char rq[100], const char* domain, const size_t domainLen) {
 	return rqLen + 2;
 }
 
-int dnsCreateAnswer(char* answer, const char* req, const int ip, const size_t offset) {
+int dnsCreateAnswer(char * const answer, const char * const req, const int ip, const size_t offset) {
 	memset(answer, 0, 99);
 
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
@@ -210,25 +210,15 @@ size_t dnsRequest_GetDomain(const char* req, char* holder, const size_t offset) 
 	return domainLen;
 }
 
-int dnsRequest_GetOpcode(const char* req) {
-	return
-		getBit(req + 4, 2) * 8
-	+	getBit(req + 4, 3) * 4
-	+	getBit(req + 4, 4) * 2
-	+	getBit(req + 4, 5) * 1
-	;
+int dnsRequest_GetOpcode(const char * const req) {
+	return (req[4] >> 3) & 16;
 }
 
-int dnsResponse_GetResponseCode(const char* res) {
-	return
-		getBit(res + 3, 5) * 8
-	+	getBit(res + 3, 6) * 4
-	+	getBit(res + 3, 7) * 2
-	+	getBit(res + 3, 8) * 1
-	;
+int dnsResponse_GetResponseCode(const char * const res) {
+	return res[3] & 16;
 }
 
-int dnsResponse_GetIp_get(const char* res, const int resLen, int* ttl) {
+int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const ttl) {
 	// Search for answer block (RR, resource record) containing the IP
 	for (int i = 0; i < (resLen - 4); i++) {
 		if (memcmp(res + i, "\0\1\0\1\xc0\x0c\0\1\0\1", 10) == 0) {
@@ -250,7 +240,7 @@ int dnsResponse_GetIp_get(const char* res, const int resLen, int* ttl) {
 }
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
-int dnsResponse_GetIp(const int offset, const char* res, const int resLen, int* ttl) {
+int dnsResponse_GetIp(const int offset, const char * const res, const int resLen, int * const ttl) {
 	if (dnsResponse_GetResponseCode(res + offset) != 0) return 1; // 0 = no error
 
 	uint16_t answerCount;
