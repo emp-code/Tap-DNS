@@ -89,7 +89,7 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain, const 
 	return 19 + lenQuestion;
 }
 
-int dnsCreateAnswer(unsigned char * const answer, const char * const req, const int ip, const size_t offset) {
+int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const req, const int ip, const size_t offset) {
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
@@ -160,7 +160,7 @@ int dnsCreateAnswer(unsigned char * const answer, const char * const req, const 
 	answer[13] = 0;
 
 	// Bytes 13+ Question. Copy from Request.
-	const size_t questionLen = strlen(req + 12 + offset) + 5;
+	const size_t questionLen = strlen((char*)req + 12 + offset) + 5;
 	if (questionLen + 30 > 99) return -8;
 	memcpy(answer + 14, req + 12 + offset, questionLen);
 
@@ -188,7 +188,7 @@ int dnsCreateAnswer(unsigned char * const answer, const char * const req, const 
 }
 
 // Get the requested domain in the request
-size_t dnsRequest_GetDomain(const char * const req, char * const holder, const size_t offset) {
+size_t dnsRequest_GetDomain(const unsigned char * const req, char * const holder, const size_t offset) {
 	size_t domainLen = req[12 + offset];
 
 	// Convert domain to lowercase
@@ -213,15 +213,15 @@ size_t dnsRequest_GetDomain(const char * const req, char * const holder, const s
 	return domainLen;
 }
 
-int dnsRequest_GetOpcode(const char * const req) {
+int dnsRequest_GetOpcode(const unsigned char * const req) {
 	return (req[4] >> 3) & 16;
 }
 
-int dnsResponse_GetResponseCode(const char * const res) {
+int dnsResponse_GetResponseCode(const unsigned char * const res) {
 	return res[3] & 16;
 }
 
-int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const ttl) {
+int dnsResponse_GetIp_get(const unsigned char * const res, const int resLen, int * const ttl) {
 	// Search for answer block (RR, resource record) containing the IP
 	for (int i = 0; i < (resLen - 4); i++) {
 		if (memcmp(res + i, "\0\1\0\1\xc0\x0c\0\1\0\1", 10) == 0) {
@@ -243,7 +243,7 @@ int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const 
 }
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
-int dnsResponse_GetIp(const char * const res, const int resLen, int * const ttl) {
+int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * const ttl) {
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
 	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
 

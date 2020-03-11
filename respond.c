@@ -22,7 +22,7 @@
 
 #include "respond.h"
 
-int dnsSendAnswer(const int sockIn, const char *req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
+int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
 	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
@@ -54,7 +54,7 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 
 	send(sockDns, req, reqLen, 0);
 
-	char res[TAPDNS_BUFLEN + 1];
+	unsigned char res[TAPDNS_BUFLEN + 1];
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
 
@@ -62,7 +62,7 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 }
 
 // Respond to a client's DNS request
-int respond(const int sock, const char *req, const size_t reqLen, const struct sockaddr *addr, socklen_t addrLen) {
+int respond(const int sock, const unsigned char *req, const size_t reqLen, const struct sockaddr *addr, socklen_t addrLen) {
 	// Get the domain that was requested
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);

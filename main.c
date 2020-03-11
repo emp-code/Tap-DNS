@@ -50,7 +50,7 @@ void acceptConnections_tcp() {
 			close(sock);
 
 			// Read the request from the client
-			char req[TAPDNS_BUFLEN + 1];
+			unsigned char req[TAPDNS_BUFLEN + 1];
 			const int reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
 			if (reqLen < 0) {perror("Failed receiving a connection"); close(newSock); return;}
 
@@ -80,7 +80,7 @@ void acceptConnections_udp() {
 		struct sockaddr_in addrIn; // Client address
 		socklen_t addrlen = sizeof(addrIn);
 
-		char req[TAPDNS_BUFLEN]; // Request holder
+		unsigned char req[TAPDNS_BUFLEN]; // Request holder
 		const int reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
 		if (reqLen < 0) {perror("Failed receiving a connection"); continue;}
 
