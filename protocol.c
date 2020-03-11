@@ -10,7 +10,7 @@
 
 #include "protocol.h"
 
-int dnsCreateRequest(char * const rq, const char * const domain, const size_t domainLen) {
+int dnsCreateRequest(unsigned char * const rq, const char * const domain, const size_t domainLen) {
 	memset(rq, 0, 99);
 
 	// Bytes 1-2: Transaction ID.
@@ -84,7 +84,7 @@ int dnsCreateRequest(char * const rq, const char * const domain, const size_t do
 	return rqLen + 2;
 }
 
-int dnsCreateAnswer(char * const answer, const char * const req, const int ip, const size_t offset) {
+int dnsCreateAnswer(unsigned char * const answer, const char * const req, const int ip, const size_t offset) {
 	memset(answer, 0, 99);
 
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.

@@ -23,7 +23,7 @@
 #include "respond.h"
 
 int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct sockaddr* addr, socklen_t addrLen) {
-	char answer[100];
+	unsigned char answer[100];
 	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
 	if (len < 0) return len;
 
@@ -39,7 +39,7 @@ int dnsSendAnswer(const int sockIn, const char* req, const int ip, const struct 
 }
 
 int queryDns(const char* domain, const size_t domainLen, int* ttl) {
-	char req[100];
+	unsigned char req[100];
 	const int reqLen = dnsCreateRequest(req, domain, domainLen);
 
 	struct sockaddr_in dnsAddr;
