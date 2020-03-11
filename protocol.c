@@ -247,7 +247,7 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
 	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
 
-	if (dnsResponse_GetResponseCode(res + 2) != 0) return 1; // 0 = no error
+	if (dnsResponse_GetResponseCode(res + 4) != 0) return 1; // 0 = no error
 
 	if (res[6] != 0  || res[7]  != 1) puts("WARNING: Invalid question count");
 	if (res[10] != 0 || res[11] != 0) puts("WARNING: Invalid auth. count");
