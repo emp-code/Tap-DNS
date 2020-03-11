@@ -1,5 +1,3 @@
-// main.h: Init the program and accept clients
-
 #define TAPDNS_PORT_INTERNAL 60053 // Port to accept connections on
 #define TAPDNS_BUFLEN 1024
 
@@ -23,7 +21,6 @@ int initSocket(const int sock) {
 	servAddr.sin_port = htons(TAPDNS_PORT_INTERNAL);
 
 	const int ret = bind(sock, (struct sockaddr*)&servAddr, sizeof(servAddr));
-
 	if (ret < 0) return ret;
 
 	listen(sock, 25); // socket, backlog (# of connections to keep in queue)
