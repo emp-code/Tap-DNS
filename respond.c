@@ -7,7 +7,8 @@
 #define TAPDNS_OFFSET_TCP 2
 #define TAPDNS_OFFSET_UDP 0
 
-#define TAPDNS_TYPE_BLOCK1 30
+#define TAPDNS_TYPE_BLOCK_HI 35
+#define TAPDNS_TYPE_BLOCK_LO 30
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -97,35 +98,35 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	}
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
-		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK1)) {
+		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("D %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
-		if (dbParentDomainBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
+		if (dbParentDomainBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("P %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
-		if (dbSubdomainBlocked(db, domain, domainLen, tldLoc, TAPDNS_TYPE_BLOCK1)) {
+		if (dbSubdomainBlocked(db, domain, domainLen, tldLoc, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("S %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
-		if (dbTldBlocked(db, domain + tldLoc, TAPDNS_TYPE_BLOCK1)) {
+		if (dbTldBlocked(db, domain + tldLoc, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("T %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 		
-		if (dbKeywordBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
+		if (dbKeywordBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("K %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
