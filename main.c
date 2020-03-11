@@ -32,15 +32,15 @@ int initSocket(const int sock) {
 void acceptConnections_tcp() {
 	// Create a TCP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {puts("ERROR: Opening socket failed"); return;}
+	if (sock < 0) {puts("ERROR: Failed opening socket"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return;}
+	if (initSocket(sock) != 0) {puts("ERROR: Failed binding socket"); return;}
 
 	// Accept connections on the socket
 	while(1) {
 		const int newSock = accept(sock, NULL, NULL);
-		if (newSock < 0) {puts("ERROR: Failed creating socket for accepting connection"); return;}
+		if (newSock < 0) {puts("ERROR: Failed accepting connection"); return;}
 
 		const int pid = fork();
 		if (pid < 0) {puts("ERROR: Failed forking"); return;}
@@ -70,10 +70,10 @@ void acceptConnections_tcp() {
 void acceptConnections_udp() {
 	// Create a UDP socket to accept connections on
 	const int sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {puts("ERROR: Opening socket failed"); return;}
+	if (sock < 0) {puts("ERROR: Failed opening socket"); return;}
 
 	// Init the socket
-	if (initSocket(sock) != 0) {puts("ERROR: Binding socket failed"); return;}
+	if (initSocket(sock) != 0) {puts("ERROR: Failed binding socket"); return;}
 
 	// Accept connections on the socket
 	while(1) {
@@ -82,7 +82,7 @@ void acceptConnections_udp() {
 
 		unsigned char req[TAPDNS_BUFLEN]; // Request holder
 		const int reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
-		if (reqLen < 0) {perror("Failed receiving a connection"); continue;}
+		if (reqLen < 0) {perror("ERROR: Failed receiving a connection"); continue;}
 
 		const int pid = fork();
 		if (pid < 0) {puts("ERROR: Failed forking connection"); return;}
