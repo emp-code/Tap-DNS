@@ -84,7 +84,7 @@ int respond(const int sock, const char* req, const size_t reqLen, const struct s
 		return 0;
 	}
 
-	if (strcmp(domain, "localhost") == 0 || memcmp(domain + domainLen - 4, ".tap", 4) == 0) {
+	if (strcmp(domain, "localhost") == 0 || (domainLen > 4 && memcmp(domain + domainLen - 4, ".tap", 4) == 0)) {
 		dnsSendAnswer(sock, req, 16777343, addr, addrLen); // 127.0.0.1
 		return 0;
 	}
