@@ -39,7 +39,7 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 int queryDns(const char * const domain, const size_t domainLen, int * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
-	const int reqLen = dnsCreateRequest(req, domain, domainLen);
+	const int reqLen = dnsCreateRequest(req, domain);
 
 	struct sockaddr_in dnsAddr;
 	const socklen_t addrlen = sizeof(dnsAddr);
