@@ -49,8 +49,8 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
 
 	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sockDns < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 1;}
-	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 1;}
+	if (sockDns < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 0;}
+	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 0;}
 
 	send(sockDns, req, reqLen, 0);
 
