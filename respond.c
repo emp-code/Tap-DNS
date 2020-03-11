@@ -68,8 +68,6 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
 
-	printf("DEBUG: Domain '%s' requested (length: %zd bytes)\n", domain, reqLen);
-
 	if (dnsRequest_GetOpcode(req) != 0) {
 		puts("DEBUG: Non-standard OPCODE");
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
@@ -77,7 +75,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	}
 
 	if (isInvalidDomain(domain, domainLen)) {
-		puts("DEBUG: Invalid domain");
+		printf("DEBUG: Invalid domain: %.*s\n", (int)domainLen, domain);
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
 	}
@@ -94,44 +92,42 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	const int tldLoc = getTldLocation(db, domain);
 	if (tldLoc < 2) {
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
-		puts("DEBUG: TLD not found for domain");
+		printf("DEBUG: TLD not found for domain: %.*s\n", (int)domainLen, domain);
 		return;
 	}
-
-	printf("DEBUG: TLD='%s'\n", domain + tldLoc);
 
 	if (!dbWhitelisted(db, domain, domainLen)) {
 		if (dbDomainBlocked(db, domain, domainLen, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			puts("DEBUG: Domain blocked");
+			printf("D %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		if (dbParentDomainBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			puts("DEBUG: Domain blocked");
+			printf("P %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		if (dbSubdomainBlocked(db, domain, domainLen, tldLoc, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			puts("DEBUG: Subdomain blocked");
+			printf("S %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		if (dbTldBlocked(db, domain + tldLoc, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			puts("DEBUG: TLD blocked");
+			printf("T %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 		
 		if (dbKeywordBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK1)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			puts("DEBUG: Keyword blocked");
+			printf("K %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
@@ -145,27 +141,26 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		// Query the DNS server for a response
 		int ttl;
 		ip = queryDns(domain, domainLen, &ttl);
-		printf("DEBUG: TTL=%d\n", ttl);
 
 		if (ip == 1) {
 			// Server-side error (such as non-existent domain)
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
-			puts("DEBUG: Server-side error");
+			printf("N %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		} else if (ip == 0) {
-			// Failed parsing the server's response
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
-			puts("ERROR: Failed parsing the server's response");
+			printf("E %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		// Successfully got response from the server, save it to the database
 		dbSetIp(db, domain, domainLen, ip, ttl);
-	}
+		printf("+ %.*s\n", (int)domainLen, domain);
+	} else printf("  %.*s\n", (int)domainLen, domain);
 
 	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip, addr, addrLen);
