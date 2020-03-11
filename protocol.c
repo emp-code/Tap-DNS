@@ -222,7 +222,7 @@ int dnsResponse_GetResponseCode(const unsigned char * const res) {
 }
 
 int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, uint32_t * const ttl) {
-	size_t offset = 0;
+	int offset = 0;
 	bool pointer = false;
 
 	while (offset < rrLen) {
