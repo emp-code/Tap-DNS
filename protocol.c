@@ -246,9 +246,7 @@ int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, u
 
 				return ip;
 			} else {
-				offset += 8;
-
-				offset += lenRecord + 2;
+				offset += 10 + lenRecord;
 				continue;
 			}
 		} else if ((lenLabel & 192) == 192) {
