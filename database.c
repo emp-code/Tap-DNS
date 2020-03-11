@@ -11,7 +11,7 @@
 int dbGetIp(sqlite3 *db, const char * const domain, const size_t lenDomain) {
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT ip FROM dns WHERE domain = ? AND expire > STRFTIME('%s', 'NOW')", 70, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: Failed to prepare SQL query: %d\n", ret); sqlite3_close_v2(db); return 0;}
+	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL query: %d\n", ret); sqlite3_close_v2(db); return 0;}
 
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
 	ret = sqlite3_step(query);
@@ -27,7 +27,7 @@ int dbSetIp(sqlite3 *db, const char * const domain, const size_t lenDomain, cons
 
 	// Try insert
 	int ret = sqlite3_prepare_v2(db, "INSERT INTO dns (domain, ip, expire) VALUES (?, ?, STRFTIME('%s', 'NOW') + ?)", 77, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: Failed to prepare SQL insert query: %d\n", ret); sqlite3_close_v2(db); return -2;}
+	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL insert query: %d\n", ret); sqlite3_close_v2(db); return -2;}
 
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
 	sqlite3_bind_int(query, 2, ip);
@@ -39,7 +39,7 @@ int dbSetIp(sqlite3 *db, const char * const domain, const size_t lenDomain, cons
 
 	// Try update
 	ret = sqlite3_prepare_v2(db, "UPDATE dns SET ip = ?, expire = STRFTIME('%s', 'NOW') + ?, ts = STRFTIME('%s', 'NOW') WHERE domain = ?", 102, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: Failed to prepare SQL query: %d\n", ret); sqlite3_close_v2(db); return -3;}
+	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL query: %d\n", ret); sqlite3_close_v2(db); return -3;}
 
 	sqlite3_bind_int(query, 1, ip);
 	sqlite3_bind_int(query, 2, ttl);
@@ -49,7 +49,7 @@ int dbSetIp(sqlite3 *db, const char * const domain, const size_t lenDomain, cons
 
 	if (ret == SQLITE_DONE) return 0;
 
-	printf("ERROR: Failed to insert row: %d\n", ret);
+	printf("ERROR: Failed inserting row: %d\n", ret);
 	return -4;
 }
 
@@ -63,7 +63,7 @@ int getTldLocation(sqlite3 *db, char * const domain) {
 
 		sqlite3_stmt *query;
 		int ret = sqlite3_prepare_v2(db, "SELECT tld FROM tld WHERE tld = ? OR tld = ? OR tld = ?", 55, &query, NULL);
-		if (ret != SQLITE_OK) {printf("ERROR: tld: failed to prepare SQL query: %d\n", ret); return -2;}
+		if (ret != SQLITE_OK) {printf("ERROR: TLD - Failed preparing SQL query: %d\n", ret); return -2;}
 
 		char testTldE[strlen(testTld) + 2];
 		char testTldA[strlen(testTld) + 3];
@@ -76,7 +76,7 @@ int getTldLocation(sqlite3 *db, char * const domain) {
 
 		ret = sqlite3_step(query);
 		if (ret == SQLITE_DONE) {sqlite3_finalize(query); continue;}
-		if (ret != SQLITE_ROW) {printf("ERROR: tld: failed to execute SQL query: %d\n", ret); return -3;}
+		if (ret != SQLITE_ROW) {printf("ERROR: TLD - Failed executing SQL query: %d\n", ret); return -3;}
 
 		const size_t tldSize = sqlite3_column_bytes(query, 0);
 		const char * const foundTld = ((char*)sqlite3_column_text(query, 0));
@@ -105,7 +105,7 @@ bool dbWhitelisted(sqlite3 *db, const char * const domain, const size_t len) {
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst=? AND type=10", 45, &query, NULL);
 	if (ret != SQLITE_OK) {
-		printf("ERROR: dbWhitelisted - Failed to prepare SQL query: %d\n", ret);
+		printf("ERROR: dbWhitelisted - Failed preparing SQL query: %d\n", ret);
 		return false;
 	}
 
@@ -114,7 +114,7 @@ bool dbWhitelisted(sqlite3 *db, const char * const domain, const size_t len) {
 	sqlite3_finalize(query);
 
 	if (ret == SQLITE_ROW) return true;
-	if (ret != SQLITE_DONE) printf("ERROR: dbWhitelisted - Failed to execute SQL query: %d\n", ret);
+	if (ret != SQLITE_DONE) printf("ERROR: dbWhitelisted - Failed executing SQL query: %d\n", ret);
 
 	// Either the domain is not whitelisted or there was an error -> treat as not whitelisted
 	return false;
@@ -124,7 +124,7 @@ bool dbWhitelisted(sqlite3 *db, const char * const domain, const size_t len) {
 bool dbDomainBlocked(sqlite3 *db, const char * const domain, const size_t len, const int blockType) {
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM hsttype WHERE hst = ? AND type >= ?", 49, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: dbDomainBlocked - Failed to prepare SQL query: %d\n", ret); return true;}
+	if (ret != SQLITE_OK) {printf("ERROR: dbDomainBlocked - Failed preparing SQL query: %d\n", ret); return true;}
 
 	sqlite3_bind_text(query, 1, domain, len, SQLITE_STATIC);
 	sqlite3_bind_int(query, 2, blockType);
@@ -132,7 +132,7 @@ bool dbDomainBlocked(sqlite3 *db, const char * const domain, const size_t len, c
 	sqlite3_finalize(query);
 
 	if (ret == SQLITE_DONE) return false;
-	if (ret != SQLITE_ROW) printf("ERROR: dbDomainBlocked - Failed to execute SQL query: %d\n", ret);
+	if (ret != SQLITE_ROW) printf("ERROR: dbDomainBlocked - Failed executing SQL query: %d\n", ret);
 
 	// Either the domain is blocked or there was an error -> treat as blocked
 	return true;
@@ -158,7 +158,7 @@ bool dbParentDomainBlocked(sqlite3 *db, const char * const domain, const int tld
 bool dbSubdomainBlocked(sqlite3 *db, const char * const domain, const size_t domainLen, const size_t tldLoc, const int blockType) {
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT sub FROM subdom WHERE type >= ?", 38, &query, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: dbBlockedSubdomain - Failed to prepare SQL query: %d\n", ret); return true;}
+	if (ret != SQLITE_OK) {printf("ERROR: dbBlockedSubdomain - Failed preparing SQL query: %d\n", ret); return true;}
 
 	sqlite3_bind_int(query, 1, blockType);
 
@@ -168,7 +168,7 @@ bool dbSubdomainBlocked(sqlite3 *db, const char * const domain, const size_t dom
 		sqlite3_finalize(query);
 		return false;
 	} else if (ret != SQLITE_ROW) {
-		printf("ERROR: dbBlockedSubdomain - Failed to execute SQL query: %d\n", ret);
+		printf("ERROR: dbBlockedSubdomain - Failed executing SQL query: %d\n", ret);
 		sqlite3_finalize(query);
 		return true; // treat as blocked
 	}
@@ -203,7 +203,7 @@ bool dbTldBlocked(sqlite3 *db, const char * const tld, const int blockType) {
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT 1 FROM tld WHERE tld = ? AND type >= ?", 45, &query, NULL);
 	if (ret != SQLITE_OK) {
-		printf("ERROR: hasBadSuffix - Failed to prepare SQL query: %d\n", ret);
+		printf("ERROR: hasBadSuffix - Failed preparing SQL query: %d\n", ret);
 		return true;
 	}
 
@@ -216,7 +216,7 @@ bool dbTldBlocked(sqlite3 *db, const char * const tld, const int blockType) {
 	if (ret == SQLITE_DONE) return false;
 
 	if (ret != SQLITE_ROW) {
-		printf("ERROR: hasBadSuffix - Failed to execute SQL query: %d\n", ret);
+		printf("ERROR: hasBadSuffix - Failed executing SQL query: %d\n", ret);
 		return true;
 	}
 
@@ -228,7 +228,7 @@ bool dbKeywordBlocked(sqlite3 *db, const char * const domain, const int tldLoc, 
 	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "SELECT keyword FROM keyword WHERE type >= ?", 44, &query, NULL);
 	if (ret != SQLITE_OK) {
-		printf("ERROR: dbKeywordBlocked - Failed to prepare SQL query: %d\n", ret);
+		printf("ERROR: dbKeywordBlocked - Failed preparing SQL query: %d\n", ret);
 		return true;
 	}
 
@@ -240,7 +240,7 @@ bool dbKeywordBlocked(sqlite3 *db, const char * const domain, const int tldLoc, 
 		sqlite3_finalize(query);
 		return false;
 	} else if (ret != SQLITE_ROW) {
-		printf("ERROR: dbKeywordBlocked - Failed to execute SQL query: %d\n", ret);
+		printf("ERROR: dbKeywordBlocked - Failed executing SQL query: %d\n", ret);
 		sqlite3_finalize(query);
 		return true;
 	}

@@ -88,7 +88,7 @@ int respond(const int sock, const char *req, const size_t reqLen, const struct s
 
 	sqlite3 *db;
 	const int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
-	if (ret != SQLITE_OK) {printf("ERROR: Failed to open database: %d\n", ret); sqlite3_close_v2(db); return -1;}
+	if (ret != SQLITE_OK) {printf("ERROR: Failed opening database: %d\n", ret); sqlite3_close_v2(db); return -1;}
 
 	const int tldLoc = getTldLocation(db, domain);
 	if (tldLoc < 2) {
@@ -154,10 +154,10 @@ int respond(const int sock, const char *req, const size_t reqLen, const struct s
 			sqlite3_close_v2(db);
 			return -2;
 		} else if (ip == 0) {
-			// Failed to parse the server's response
+			// Failed parsing the server's response
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
-			puts("ERROR: Failed to parse the server's response");
+			puts("ERROR: Failed parsing the server's response");
 			sqlite3_close_v2(db);
 			return -3;
 		}

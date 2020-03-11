@@ -40,10 +40,10 @@ void acceptConnections_tcp() {
 	// Accept connections on the socket
 	while(1) {
 		const int newSock = accept(sock, NULL, NULL);
-		if (newSock < 0) {puts("ERROR: Failed to create socket for accepting connection"); return;}
+		if (newSock < 0) {puts("ERROR: Failed creating socket for accepting connection"); return;}
 
 		const int pid = fork();
-		if (pid < 0) {puts("ERROR: Failed to fork"); return;}
+		if (pid < 0) {puts("ERROR: Failed forking"); return;}
 
 		if (pid == 0) {
 			// Child thread: Respond to the client
@@ -52,7 +52,7 @@ void acceptConnections_tcp() {
 			// Read the request from the client
 			char req[TAPDNS_BUFLEN + 1];
 			const int reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
-			if (reqLen < 0) {perror("Failed to receive a connection"); close(newSock); return;}
+			if (reqLen < 0) {perror("Failed receiving a connection"); close(newSock); return;}
 
 			respond(newSock, req, reqLen, NULL, 0);
 
@@ -82,10 +82,10 @@ void acceptConnections_udp() {
 
 		char req[TAPDNS_BUFLEN]; // Request holder
 		const int reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
-		if (reqLen < 0) {perror("Failed to receive a connection"); continue;}
+		if (reqLen < 0) {perror("Failed receiving a connection"); continue;}
 
 		const int pid = fork();
-		if (pid < 0) {puts("ERROR: Failed to fork connection"); return;}
+		if (pid < 0) {puts("ERROR: Failed forking connection"); return;}
 		else if (pid != 0) continue; // 0 = Child
 
 		respond(sock, req, reqLen, (struct sockaddr*)&addrIn, addrlen);
@@ -106,7 +106,7 @@ int main() {
 
 	// Fork once here to accept both UDP and TCP connections
 	const int pid = fork();
-	if (pid < 0) {puts("ERROR: Failed to fork connection"); return 1;}
+	if (pid < 0) {puts("ERROR: Failed forking connection"); return 1;}
 
 	if (pid == 0)
 		acceptConnections_udp(); // Child thread: Accept UDP connections
