@@ -167,7 +167,7 @@ int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const re
 	size_t totalLen = 14 + questionLen;
 
 	if (ip != 0) {
-		char rr[] = {
+		const char rr[] = {
 			'\xc0', '\x0c', // Name (pointer)
 			'\0', '\1', // Type A
 			'\0', '\1', // Class Internet
