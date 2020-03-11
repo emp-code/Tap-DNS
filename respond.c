@@ -62,7 +62,7 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 }
 
 // Respond to a client's DNS request
-void respond(const int sock, const unsigned char *req, const size_t reqLen, const struct sockaddr *addr, socklen_t addrLen) {
+void respond(const int sock, const unsigned char * const req, const size_t reqLen, const struct sockaddr * const addr, socklen_t addrLen) {
 	// Get the domain that was requested
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
