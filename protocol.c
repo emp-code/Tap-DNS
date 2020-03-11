@@ -11,8 +11,6 @@
 #include "protocol.h"
 
 int dnsCreateRequest(unsigned char * const rq, const char * const domain, const size_t domainLen) {
-	memset(rq, 0, 99);
-
 	// Bytes 1-2: Transaction ID.
 	getrandom(rq + 2, 2, 0);
 
@@ -85,8 +83,6 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain, const 
 }
 
 int dnsCreateAnswer(unsigned char * const answer, const char * const req, const int ip, const size_t offset) {
-	memset(answer, 0, 99);
-
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
