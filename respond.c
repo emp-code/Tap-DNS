@@ -58,7 +58,7 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
 
-	return dnsResponse_GetIp(TAPDNS_OFFSET_TCP, res, ret, ttl);
+	return dnsResponse_GetIp(res, ret, ttl);
 }
 
 // Respond to a client's DNS request

@@ -236,11 +236,11 @@ int dnsResponse_GetIp_get(const char * const res, const int resLen, int * const 
 }
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
-int dnsResponse_GetIp(const int offset, const char * const res, const int resLen, int * const ttl) {
-	if (dnsResponse_GetResponseCode(res + offset) != 0) return 1; // 0 = no error
+int dnsResponse_GetIp(const char * const res, const int resLen, int * const ttl) {
+	if (dnsResponse_GetResponseCode(res + 2) != 0) return 1; // 0 = no error
 
 	uint16_t answerCount;
-	memcpy(&answerCount, res + 6 + offset, 2);
+	memcpy(&answerCount, res + 8, 2);
 	if (answerCount == 0) return 1; // Must have at least 1 answer.
 
 	return dnsResponse_GetIp_get(res, resLen, ttl);
