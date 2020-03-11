@@ -221,22 +221,43 @@ int dnsResponse_GetResponseCode(const unsigned char * const res) {
 	return res[3] & 16;
 }
 
-int dnsResponse_GetIp_get(const unsigned char * const res, const int resLen, int * const ttl) {
-	// Search for answer block (RR, resource record) containing the IP
-	for (int i = 0; i < (resLen - 4); i++) {
-		if (memcmp(res + i, "\0\1\0\1\xc0\x0c\0\1\0\1", 10) == 0) {
-			// Get Time To Live (TTL)
-			int32_t recordTtl;
-			memcpy(&recordTtl, res + i + 10, 4);
-			*ttl = ntohl(recordTtl); // TTL is in network byte order
-			
-			// *(res + i + 14) should be 0
-			// *(res + i + 15) should be 4
-			// Meaning the next field (IP) is 4 bytes long
+int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, uint32_t * const ttl) {
+	size_t offset = 0;
+	bool pointer = false;
 
-			// Get IP
-			return *((int*)(res + i + 16)); // 10 + 4 (TTL) + 2 (Length)
+	while (offset < rrLen) {
+		uint8_t lenLabel = rr[offset];
+
+		if (pointer || lenLabel == 0) {
+			if (!pointer) offset++;
+
+			uint16_t lenRecord;
+			memcpy((unsigned char*)&lenRecord + 0, rr + offset + 9, 1);
+			memcpy((unsigned char*)&lenRecord + 1, rr + offset + 8, 1);
+
+			if (memcmp(rr + offset, "\0\1\0\1", 4) == 0 && lenRecord == 4) { // A Record
+				memcpy((unsigned char*)ttl + 0, rr + offset + 7, 1);
+				memcpy((unsigned char*)ttl + 1, rr + offset + 6, 1);
+				memcpy((unsigned char*)ttl + 2, rr + offset + 5, 1);
+				memcpy((unsigned char*)ttl + 3, rr + offset + 4, 1);
+
+				int32_t ip;
+				memcpy(&ip, rr + offset + 10, 4);
+
+				return ip;
+			} else {
+				offset += 8;
+
+				offset += lenRecord + 2;
+				continue;
+			}
+		} else if ((lenLabel & 192) == 192) {
+			offset += 2;
+			pointer = true;
+			continue;
 		}
+
+		offset += 1 + lenLabel;
 	}
 
 	return 0;
@@ -258,5 +279,10 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	memcpy((unsigned char*)&answerCount + 1, res + 8, 1);
 	if (answerCount < 1) return 1;
 
-	return dnsResponse_GetIp_get(res, resLen, ttl);
+	uint32_t ttl32;
+	const int ip = dnsResponse_GetIp_get(res + 14 + lenQuestion, resLen - 14 - lenQuestion, &ttl32);
+	if (ip == 0) return 1;
+
+	*ttl = ttl32;
+	return ip;
 }
