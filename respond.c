@@ -10,6 +10,8 @@
 #define TAPDNS_TYPE_BLOCK_HI 35
 #define TAPDNS_TYPE_BLOCK_LO 30
 
+#define TAPDNS_MINTTL 3600
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -145,14 +147,13 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 		if (ip == 1) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-
 			printf("E %.*s\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		// Successfully got response from the server, save it to the database
-		dbSetIp(db, domain, domainLen, ip, ttl);
+		dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
 		printf("+ %.*s\n", (int)domainLen, domain);
 	} else printf("  %.*s\n", (int)domainLen, domain);
 
