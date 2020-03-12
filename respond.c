@@ -2,24 +2,21 @@
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
 #define TAPDNS_SERVER_ADDR "8.8.8.8" // Google DNS
 #define TAPDNS_SERVER_PORT 53
-
+#define TAPDNS_MINTTL 86400
 #define TAPDNS_BUFLEN 512
+
+#define UINT32_LOCALHOST 16777343
 #define TAPDNS_OFFSET_TCP 2
 #define TAPDNS_OFFSET_UDP 0
-
 #define TAPDNS_TYPE_BLOCK_HI 35
 #define TAPDNS_TYPE_BLOCK_LO 30
 
-#define TAPDNS_MINTTL 3600
-
-#define UINT32_LOCALHOST 16777343
-
-
-#include <stdlib.h>
+#include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+
 #include <sqlite3.h>
 
 #include "database.h"
