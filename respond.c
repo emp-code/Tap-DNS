@@ -11,6 +11,11 @@
 #define TAPDNS_TYPE_BLOCK_HI 35
 #define TAPDNS_TYPE_BLOCK_LO 30
 
+#define ANSI_RED "\x1B[0;31m"
+#define ANSI_GRN "\x1B[0;32m"
+#define ANSI_YLW "\x1B[0;33m"
+#define ANSI_RST "\x1B[m"
+
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,15 +150,15 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 		if (ip == 1) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			printf("E %.*s\n", (int)domainLen, domain);
+			printf(ANSI_YLW"E %.*s\n"ANSI_RST, (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		// Successfully got response from the server, save it to the database
 		dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
-		printf("+ %.*s\n", (int)domainLen, domain);
-	} else printf("  %.*s\n", (int)domainLen, domain);
+		printf(ANSI_RED"+ %.*s\n"ANSI_RST, (int)domainLen, domain);
+	} else printf(ANSI_GRN"  %.*s\n"ANSI_RST, (int)domainLen, domain);
 
 	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip, addr, addrLen);
