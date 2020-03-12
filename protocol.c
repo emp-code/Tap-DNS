@@ -262,6 +262,31 @@ uint32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, 
 	return 0;
 }
 
+static uint32_t validIp(const uint32_t ip) {
+	const uint8_t b1 = ip & 0xFF;
+	const uint8_t b2 = (ip >>  8) & 0xFF;
+	const uint8_t b3 = (ip >> 16) & 0xFF;
+//	const uint8_t b4 = (ip >> 24) & 0xFF;
+
+	return (
+	   (b1 == 0)
+	|| (b1 == 10)
+	|| (b1 == 100 && b2 >= 64 && b2 <= 127)
+	|| (b1 == 127)
+	|| (b1 == 169 && b2 == 254)
+	|| (b1 == 172 && b2 >= 16 && b2 <= 31)
+	|| (b1 == 192 && b2 == 0  && b3 == 0)
+	|| (b1 == 192 && b2 == 0  && b3 == 2)
+	|| (b1 == 192 && b2 == 88 && b3 == 99)
+	|| (b1 == 192 && b2 == 168)
+	|| (b1 == 198 && b2 >= 18 && b2 <= 19)
+	|| (b1 == 198 && b2 == 51 && b3 == 100)
+	|| (b1 == 203 && b2 == 0  && b3 == 113)
+	|| (b1 >= 224 && b1 <= 239)
+	|| (b1 >= 240)
+	) ? 0 : ip;
+}
+
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
 uint32_t dnsResponse_GetIp(const unsigned char * const res, const int resLen, uint32_t * const ttl) {
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
@@ -283,5 +308,5 @@ uint32_t dnsResponse_GetIp(const unsigned char * const res, const int resLen, ui
 	if (ip == 0) return 1;
 
 	*ttl = ttl32;
-	return ip;
+	return validIp(ip);
 }
