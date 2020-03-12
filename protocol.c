@@ -267,7 +267,7 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
 	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
 
-	if (dnsResponse_GetResponseCode(res + 4) != 0) return 1;
+	if (dnsResponse_GetResponseCode(res + 4) != 0) return 0;
 
 	if (res[6] != 0  || res[7]  != 1) puts("WARNING: Invalid question count");
 	if (res[10] != 0 || res[11] != 0) puts("WARNING: Invalid auth. count");
@@ -276,11 +276,11 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	uint16_t answerCount;
 	memcpy((unsigned char*)&answerCount + 0, res + 9, 1);
 	memcpy((unsigned char*)&answerCount + 1, res + 8, 1);
-	if (answerCount < 1) return 1;
+	if (answerCount < 1) return 0;
 
 	uint32_t ttl32;
 	const int ip = dnsResponse_GetIp_get(res + 14 + lenQuestion, resLen - 14 - lenQuestion, &ttl32);
-	if (ip == 0) return 0;
+	if (ip == 0) return 1;
 
 	*ttl = ttl32;
 	return ip;

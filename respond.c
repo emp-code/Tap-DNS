@@ -50,15 +50,15 @@ int queryDns(const char * const domain, const size_t domainLen, int * const ttl)
 	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
 
 	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sockDns < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 0;}
-	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 0;}
+	if (sockDns < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 1;}
+	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 1;}
 
 	send(sockDns, req, reqLen, 0);
 
 	unsigned char res[TAPDNS_BUFLEN + 1];
 	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
 	close(sockDns);
-	if (ret < 1) return 0;
+	if (ret < 1) return 1;
 
 	return dnsResponse_GetIp(res, ret, ttl);
 }
@@ -136,7 +136,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 	int ip = dbGetIp(db, domain, domainLen);
 
-	if (ip == 0) {
+	if (ip == 1) {
 		// IP does not exist in the database or there was an error getting it
 
 		// Query the DNS server for a response
@@ -144,13 +144,6 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		ip = queryDns(domain, domainLen, &ttl);
 
 		if (ip == 1) {
-			// Server-side error (such as non-existent domain)
-			dnsSendAnswer(sock, req, 0, addr, addrLen);
-
-			printf("N %.*s\n", (int)domainLen, domain);
-			sqlite3_close_v2(db);
-			return;
-		} else if (ip == 0) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 
 			printf("E %.*s\n", (int)domainLen, domain);
