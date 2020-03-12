@@ -12,6 +12,9 @@
 
 #define TAPDNS_MINTTL 3600
 
+#define UINT32_LOCALHOST 16777343
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +87,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	}
 
 	if (strcmp(domain, "localhost") == 0 || (domainLen > 4 && memcmp(domain + domainLen - 4, ".tap", 4) == 0)) {
-		dnsSendAnswer(sock, req, 16777343, addr, addrLen); // 127.0.0.1
+		dnsSendAnswer(sock, req, UINT32_LOCALHOST, addr, addrLen);
 		return;
 	}
 
@@ -140,8 +143,6 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 	if (ip == 1) {
 		// IP does not exist in the database or there was an error getting it
-
-		// Query the DNS server for a response
 		uint32_t ttl;
 		ip = queryDns(domain, domainLen, &ttl);
 
@@ -159,6 +160,5 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip, addr, addrLen);
-
 	sqlite3_close_v2(db);
 }
