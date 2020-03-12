@@ -89,7 +89,7 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain) {
 	return 19 + lenQuestion;
 }
 
-int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const req, const int ip, const size_t offset) {
+int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const req, const uint32_t ip, const size_t offset) {
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
 	setBit(answer + 4, 1, 1); // Byte 3, Bit 1: QR (Query/Response). 0 = Query, 1 = Response.
@@ -221,7 +221,7 @@ int dnsResponse_GetResponseCode(const unsigned char * const res) {
 	return res[3] & 16;
 }
 
-int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, uint32_t * const ttl) {
+uint32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, uint32_t * const ttl) {
 	int offset = 0;
 	bool pointer = false;
 
@@ -242,7 +242,7 @@ int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, u
 				memcpy((unsigned char*)ttl + 2, rr + offset + 5, 1);
 				memcpy((unsigned char*)ttl + 3, rr + offset + 4, 1);
 
-				int32_t ip;
+				uint32_t ip;
 				memcpy(&ip, rr + offset + 10, 4);
 
 				return ip;
@@ -263,7 +263,7 @@ int32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, u
 }
 
 // offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
-int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * const ttl) {
+uint32_t dnsResponse_GetIp(const unsigned char * const res, const int resLen, uint32_t * const ttl) {
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
 	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
 
@@ -279,7 +279,7 @@ int dnsResponse_GetIp(const unsigned char * const res, const int resLen, int * c
 	if (answerCount < 1) return 0;
 
 	uint32_t ttl32;
-	const int ip = dnsResponse_GetIp_get(res + 14 + lenQuestion, resLen - 14 - lenQuestion, &ttl32);
+	const uint32_t ip = dnsResponse_GetIp_get(res + 14 + lenQuestion, resLen - 14 - lenQuestion, &ttl32);
 	if (ip == 0) return 1;
 
 	*ttl = ttl32;

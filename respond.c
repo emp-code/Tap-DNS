@@ -37,7 +37,7 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 	return (ret == len) ? 0 : -1;
 }
 
-int queryDns(const char * const domain, const size_t domainLen, int * const ttl) {
+uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
 	const int reqLen = dnsCreateRequest(req, domain);
@@ -134,13 +134,13 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		}
 	}
 
-	int ip = dbGetIp(db, domain, domainLen);
+	uint32_t ip = dbGetIp(db, domain, domainLen);
 
 	if (ip == 1) {
 		// IP does not exist in the database or there was an error getting it
 
 		// Query the DNS server for a response
-		int ttl;
+		uint32_t ttl;
 		ip = queryDns(domain, domainLen, &ttl);
 
 		if (ip == 1) {
