@@ -294,9 +294,7 @@ uint32_t dnsResponse_GetIp(const unsigned char * const res, const int resLen, ui
 
 	if (dnsResponse_GetResponseCode(res + 4) != 0) return 0;
 
-	if (res[6] != 0  || res[7]  != 1) puts("WARNING: Invalid question count");
-	if (res[10] != 0 || res[11] != 0) puts("WARNING: Invalid auth. count");
-	if (res[12] != 0 || res[13] != 0) puts("WARNING: Invalid addit. count");
+	if (res[6] != 0 || res[7] != 1) puts("WARNING: Invalid question count");
 
 	uint16_t answerCount;
 	memcpy((unsigned char*)&answerCount + 0, res + 9, 1);
