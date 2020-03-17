@@ -4,7 +4,7 @@ CFLAGS=-Ofast -march=native -pipe -Wall -Wextra -Werror -lsqlite3 -D_FORTIFY_SOU
 objects = main.o Includes/bit.o database.o domain.o protocol.o respond.o
 
 Tap-DNS: $(objects)
-	$(CC) $(CFLAGS) -o Tap-DNS $(objects)
+	$(CC) $(CFLAGS) -o Tap-DNS $(objects) -lmbedtls -lmbedcrypto -lmbedx509
 
 main: main.c respond.h
 

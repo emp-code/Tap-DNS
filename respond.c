@@ -1,7 +1,7 @@
 // Details of DNS server to use
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
 #define TAPDNS_SERVER_ADDR "8.8.8.8" // Google DNS
-#define TAPDNS_SERVER_PORT 53
+#define TAPDNS_SERVER_PORT 853
 #define TAPDNS_MINTTL 86400
 #define TAPDNS_BUFLEN 512
 
@@ -30,6 +30,47 @@
 
 #include "respond.h"
 
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/certs.h>
+#include <mbedtls/x509.h>
+#include <mbedtls/error.h>
+
+mbedtls_ssl_config conf;
+mbedtls_entropy_context entropy;
+mbedtls_ctr_drbg_context ctr_drbg;
+mbedtls_x509_crt cacert;
+
+void freeTls(void) {
+	mbedtls_ssl_config_free(&conf);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
+	mbedtls_x509_crt_free(&cacert);
+}
+
+int setupTls(void) {
+	mbedtls_ssl_config_init(&conf);
+	mbedtls_x509_crt_init(&cacert);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_entropy_init(&entropy);
+
+	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) return -1;
+	if (mbedtls_x509_crt_parse_path(&cacert, "/etc/ssl/certs/")) return -1;
+	if (mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT) != 0) return -1;
+
+	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+	mbedtls_ssl_conf_dhm_min_bitlen(&conf, 2048); // Minimum length for DH parameters
+	mbedtls_ssl_conf_fallback(&conf, MBEDTLS_SSL_IS_NOT_FALLBACK);
+	mbedtls_ssl_conf_min_version(&conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // Require TLS v1.2+
+	mbedtls_ssl_conf_renegotiation(&conf, MBEDTLS_SSL_RENEGOTIATION_DISABLED);
+	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+	mbedtls_ssl_conf_session_tickets(&conf, MBEDTLS_SSL_SESSION_TICKETS_DISABLED);
+	return 0;
+}
+
 int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
@@ -44,30 +85,52 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 	return (ret == len) ? 0 : -1;
 }
 
+int dnsSocket(void) {
+	struct sockaddr_in addr;
+	const socklen_t addrlen = sizeof(addr);
+	memset(&addr, 0, addrlen);
+	addr.sin_port = htons(TAPDNS_SERVER_PORT);
+	addr.sin_family = TAPDNS_ADDR_FAMILY;
+	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &addr.sin_addr.s_addr);
+
+	const int sock = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
+	if (sock < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 1;}
+	if (connect(sock, (struct sockaddr*)&addr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 1;}
+
+	return sock;
+}
+
 uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
 	const int reqLen = dnsCreateRequest(req, domain);
 
-	struct sockaddr_in dnsAddr;
-	const socklen_t addrlen = sizeof(dnsAddr);
-	memset(&dnsAddr, 0, addrlen);
-	dnsAddr.sin_port = htons(TAPDNS_SERVER_PORT);
-	dnsAddr.sin_family = TAPDNS_ADDR_FAMILY;
-	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &dnsAddr.sin_addr.s_addr);
+	int sock = dnsSocket();
+	if (sock < 0) {puts("ERROR: Failed creating socket"); return 1;}
 
-	const int sockDns = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sockDns < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 1;}
-	if (connect(sockDns, (struct sockaddr*)&dnsAddr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 1;}
+	mbedtls_ssl_context ssl;
+	mbedtls_ssl_init(&ssl);
+	if (mbedtls_ssl_setup(&ssl, &conf) != 0) {puts("ERROR: Failed setting up TLS"); return 1;}
+	mbedtls_ssl_set_bio(&ssl, &sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-	send(sockDns, req, reqLen, 0);
+	int ret;
+	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
+		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {puts("ERROR: Failed TLS handshake"); return -1;}
+	}
 
-	unsigned char res[TAPDNS_BUFLEN + 1];
-	const int ret = recv(sockDns, res, TAPDNS_BUFLEN, 0);
-	close(sockDns);
-	if (ret < 1) return 1;
+	const uint32_t flags = mbedtls_ssl_get_verify_result(&ssl);
+	if (flags != 0) {puts("ERROR: Failed verifying cert"); return -1;} // Invalid cert
 
-	return dnsResponse_GetIp(res, ret, ttl);
+	do {ret = mbedtls_ssl_write(&ssl, req, reqLen);} while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+
+	unsigned char res[TAPDNS_BUFLEN];
+	do {ret = mbedtls_ssl_read(&ssl, res, TAPDNS_BUFLEN);} while (ret == MBEDTLS_ERR_SSL_WANT_READ);
+
+	mbedtls_ssl_close_notify(&ssl);
+	mbedtls_ssl_free(&ssl);
+	close(sock);
+
+	return (ret > 0) ? dnsResponse_GetIp(res, ret, ttl) : 1;
 }
 
 // Respond to a client's DNS request

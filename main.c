@@ -72,6 +72,8 @@ int main() {
 
 	puts(">>> Tap:DNS - The Attenuating Proxy: Deadbolt Name Service");
 
+	if (setupTls() != 0) {puts("ERROR: Failed setting up TLS"); return 1;}
+
 	// Fork to accept both UDP and TCP connections
 	const int pid = fork();
 	if (pid < 0) {puts("ERROR: Failed forking connection"); return 1;}
@@ -81,5 +83,6 @@ int main() {
 	else
 		acceptConnections_tcp(); // Parent thread: Accept TCP connections
 
+	freeTls();
 	return 0;
 }
