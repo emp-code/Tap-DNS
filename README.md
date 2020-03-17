@@ -1,9 +1,16 @@
-Tap:DNS (The Attenuating Proxy: Deadbolt Name Service) is a DNS server to go with Tap, sharing its design philosophy.
+# Tap:DNS #
 
-Use with nslookup:
-- TCP: `nslookup -port=60053 -vc example.com 127.0.0.1`
-- UDP: `nslookup -port=60053 example.com 127.0.0.1`
+Tap:DNS is a DNS server designed for Tap.
 
-Use with dig:
-- TCP: `dig -p 60053 +tcp example.com @127.0.0.1`
-- UDP: `dig -p 60053 example.com @127.0.0.1`
+Features:
+* Supports both TCP and UDP
+* All connections use TLSv1.2
+* All connections are sent through Tor
+* All requests from clients are rewritten to a simple form
+* All responses from the server are rewritten to a simple form
+* .tap domains are resolved to localhost
+* Caching, with minimum TTL
+* Domain blocking
+* Subdomain blocking
+* Keyword blocking
+* TLD blocking
