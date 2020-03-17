@@ -2,6 +2,8 @@
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
 #define TAPDNS_SERVER_ADDR "8.8.8.8" // Google DNS
 #define TAPDNS_SERVER_PORT 853
+#define TAPDNS_PORT_TOR 9050
+#define TAPDNS_SOCKET_TIMEOUT 30
 #define TAPDNS_MINTTL 86400
 #define TAPDNS_BUFLEN 512
 
@@ -43,6 +45,11 @@ mbedtls_entropy_context entropy;
 mbedtls_ctr_drbg_context ctr_drbg;
 mbedtls_x509_crt cacert;
 
+static uint16_t get_uint16(const unsigned char * const c) {uint16_t v; memcpy(&v, c, 2); return v;}
+static uint32_t get_uint32(const unsigned char * const c) {uint32_t v; memcpy(&v, c, 4); return v;}
+static void set_uint16(char * const c, const uint16_t v) {memcpy(c, &v, 2);}
+static void set_uint32(char * const c, const uint32_t v) {memcpy(c, &v, 4);}
+
 void freeTls(void) {
 	mbedtls_ssl_config_free(&conf);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
@@ -71,6 +78,51 @@ int setupTls(void) {
 	return 0;
 }
 
+static int makeTorSocket(int * const sock) {
+	struct sockaddr_in torAddr;
+	torAddr.sin_family = AF_INET;
+	torAddr.sin_port = htons(TAPDNS_PORT_TOR);
+	torAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {perror("socket()"); return 1;}
+
+	// Socket Timeout
+	struct timeval tv;
+	tv.tv_sec = TAPDNS_SOCKET_TIMEOUT;
+	tv.tv_usec = 0;
+	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
+
+	if (connect(*sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return 1;}
+	return 0;
+}
+
+static int torConnect(int * const sock) {
+	makeTorSocket(sock);
+
+	const size_t lenHost = strlen(TAPDNS_SERVER_ADDR);
+	const ssize_t lenReq = 10 + lenHost;
+	char req[lenReq];
+
+	req[0] = 4; // SOCKS version 4
+	req[1] = 1; // Command: connect
+	set_uint16(req + 2, htons(TAPDNS_SERVER_PORT)); // Port number
+	set_uint32(req + 4, htonl(1)); // IP 0.0.0.1 - let Tor handle DNS
+	req[8] = 0; // username (empty)
+	memcpy(req + 9, TAPDNS_SERVER_ADDR, lenHost);
+	req[9 + lenHost] = '\0';
+
+	if ((send(*sock, req, lenReq, 0)) != lenReq) return -1;
+
+	unsigned char reply[8];
+	if (recv(*sock, reply, 8, 0) != 8) return -1;
+
+	if ((uint8_t)reply[0] != 0) return -1; // version: 0
+	if ((uint8_t)reply[1] != 90) return -1; // status: 90
+	if (get_uint16(reply + 2) != 0) return -1; // port: 0
+
+	return 0;
+}
+
 int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
@@ -85,28 +137,13 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 	return (ret == len) ? 0 : -1;
 }
 
-int dnsSocket(void) {
-	struct sockaddr_in addr;
-	const socklen_t addrlen = sizeof(addr);
-	memset(&addr, 0, addrlen);
-	addr.sin_port = htons(TAPDNS_SERVER_PORT);
-	addr.sin_family = TAPDNS_ADDR_FAMILY;
-	inet_pton(TAPDNS_ADDR_FAMILY, TAPDNS_SERVER_ADDR, &addr.sin_addr.s_addr);
-
-	const int sock = socket(TAPDNS_ADDR_FAMILY, SOCK_STREAM, 0);
-	if (sock < 0) {perror("ERROR: Failed creating socket for connecting to DNS server"); return 1;}
-	if (connect(sock, (struct sockaddr*)&addr, addrlen) < 0) {perror("ERROR: Failed connecting to DNS server"); return 1;}
-
-	return sock;
-}
-
 uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
 	const int reqLen = dnsCreateRequest(req, domain);
 
-	int sock = dnsSocket();
-	if (sock < 0) {puts("ERROR: Failed creating socket"); return 1;}
+	int sock;
+	if (torConnect(&sock) != 0) {puts("ERROR: Failed creating socket"); return 1;}
 
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_init(&ssl);
