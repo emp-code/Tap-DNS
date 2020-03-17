@@ -213,15 +213,15 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 
 		if (ip == 1) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
-			printf(ANSI_YLW"E %.*s\n"ANSI_RST, (int)domainLen, domain);
+			printf(ANSI_YLW"E %.*s"ANSI_RST"\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
 		}
 
 		// Successfully got response from the server, save it to the database
 		dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
-		printf(ANSI_RED"+ %.*s\n"ANSI_RST, (int)domainLen, domain);
-	} else printf(ANSI_GRN"  %.*s\n"ANSI_RST, (int)domainLen, domain);
+		printf(ANSI_RED"+ %.*s"ANSI_RST"\n", (int)domainLen, domain);
+	} else printf(ANSI_GRN"  %.*s"ANSI_RST"\n", (int)domainLen, domain);
 
 	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip, addr, addrLen);
