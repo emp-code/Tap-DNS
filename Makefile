@@ -1,5 +1,6 @@
 CC=gcc
-CFLAGS=-O3 -march=native -pipe -Wall -Werror=array-bounds -Werror=format-overflow=0 -Werror=format -Werror=implicit-function-declaration -Werror=implicit-int -Werror=incompatible-pointer-types -Wno-comment -Wno-switch -Wno-unused-variable -lsqlite3
+CFLAGS=-Ofast -march=native -pipe -Wall -Wextra -Werror -lsqlite3 -D_FORTIFY_SOURCE=2 -fsanitize=undefined -fstack-protector-strong -fcf-protection=full -fPIE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack -Wno-error=unused-result -Wno-error=unused-function -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-comment
+
 objects = main.o Includes/bit.o database.o domain.o protocol.o respond.o
 
 Tap-DNS: $(objects)
@@ -15,4 +16,4 @@ respond.o: respond.c Includes/bit.h database.h domain.h protocol.h
 
 .PHONY: clean
 clean:
-	-rm $(objects)
+	-rm $(objects) Tap-DNS
