@@ -115,11 +115,11 @@ uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * 
 
 	int ret;
 	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {puts("ERROR: Failed TLS handshake"); return -1;}
+		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {puts("ERROR: Failed TLS handshake"); return 1;}
 	}
 
 	const uint32_t flags = mbedtls_ssl_get_verify_result(&ssl);
-	if (flags != 0) {puts("ERROR: Failed verifying cert"); return -1;} // Invalid cert
+	if (flags != 0) {puts("ERROR: Failed verifying cert"); return 1;} // Invalid cert
 
 	do {ret = mbedtls_ssl_write(&ssl, req, reqLen);} while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
