@@ -1,4 +1,4 @@
-#define TAPDNS_PORT_INTERNAL 60053 // Port to accept connections on
+#define TAPDNS_PORT_INTERNAL 53 // Port to accept connections on
 #define TAPDNS_BUFLEN 1024
 
 #include <stdio.h>
