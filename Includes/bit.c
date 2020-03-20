@@ -1,4 +1,5 @@
 // bit.c: Get or set a specific bit in a byte
+#include "bit.h"
 
 // Get bit #1-8 from a byte
 int getBit(const unsigned char * const byte, const int bit) {
