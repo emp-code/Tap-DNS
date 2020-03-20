@@ -13,7 +13,7 @@
 
 #include "respond.h"
 
-int initSocket(const int sock) {
+static int initSocket(const int sock) {
 	struct sockaddr_in servAddr;
 	bzero((char*)&servAddr, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
@@ -27,7 +27,7 @@ int initSocket(const int sock) {
 	return 0;
 }
 
-void acceptConnections_tcp() {
+static void acceptConnections_tcp() {
 	const int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {puts("ERROR: Failed opening TCP socket"); return;}
 	if (initSocket(sock) != 0) {puts("ERROR: Failed binding TCP socket"); return;}
@@ -46,7 +46,7 @@ void acceptConnections_tcp() {
 	close(sock);
 }
 
-void acceptConnections_udp() {
+static void acceptConnections_udp() {
 	const int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {puts("ERROR: Failed opening UDP socket"); return;}
 	if (initSocket(sock) != 0) {puts("ERROR: Failed binding UDP socket"); return;}
