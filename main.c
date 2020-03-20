@@ -37,7 +37,7 @@ void acceptConnections_tcp() {
 		if (newSock < 0) {puts("ERROR: Failed accepting connection"); return;}
 
 		unsigned char req[TAPDNS_BUFLEN + 1];
-		const int reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
+		const ssize_t reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
 		if (reqLen < 0) {perror("Failed receiving a connection"); close(newSock); return;}
 		respond(newSock, req, reqLen, NULL, 0);
 		close(newSock);
@@ -55,7 +55,7 @@ void acceptConnections_udp() {
 		struct sockaddr_in addrIn;
 		socklen_t addrlen = sizeof(addrIn);
 		unsigned char req[TAPDNS_BUFLEN];
-		const int reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
+		const ssize_t reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
 		if (reqLen < 0) {perror("ERROR: Failed receiving a connection"); continue;}
 		respond(sock, req, reqLen, (struct sockaddr*)&addrIn, addrlen);
 	}
