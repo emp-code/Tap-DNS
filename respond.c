@@ -84,7 +84,7 @@ static int makeTorSocket(int * const sock) {
 	torAddr.sin_port = htons(TAPDNS_PORT_TOR);
 	torAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {perror("socket()"); return 1;}
+	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {perror("socket()"); return -1;}
 
 	// Socket Timeout
 	struct timeval tv;
@@ -92,12 +92,12 @@ static int makeTorSocket(int * const sock) {
 	tv.tv_usec = 0;
 	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
 
-	if (connect(*sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return 1;}
+	if (connect(*sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return -1;}
 	return 0;
 }
 
 static int torConnect(int * const sock) {
-	makeTorSocket(sock);
+	if (makeTorSocket(sock) != 0) return -1;
 
 	const size_t lenHost = strlen(TAPDNS_SERVER_ADDR);
 	const ssize_t lenReq = 10 + lenHost;
