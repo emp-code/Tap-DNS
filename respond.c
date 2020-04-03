@@ -241,12 +241,20 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		}
 	}
 
-	uint32_t ip = dbGetIp(db, domain, domainLen);
+	bool expired = false;
+	uint32_t ip = dbGetIp(db, domain, domainLen, &expired);
 
-	if (ip == 1) {
+	if (ip == 1 || expired) {
 		// IP does not exist in the database or there was an error getting it
 		uint32_t ttl;
-		ip = queryDns(domain, domainLen, &ttl);
+		const uint32_t ip2 = queryDns(domain, domainLen, &ttl);
+
+		if (ip2 != 1) {
+			// Successfully got response from the server, save it to the database
+			ip = ip2;
+			dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
+			printf(ANSI_RED"+ %.*s"ANSI_RST"\n", (int)domainLen, domain);
+		}
 
 		if (ip == 1) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
@@ -254,13 +262,8 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 			sqlite3_close_v2(db);
 			return;
 		}
-
-		// Successfully got response from the server, save it to the database
-		dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
-		printf(ANSI_RED"+ %.*s"ANSI_RST"\n", (int)domainLen, domain);
 	} else printf(ANSI_GRN"  %.*s"ANSI_RST"\n", (int)domainLen, domain);
 
-	// Everything OK, respond to the client
 	dnsSendAnswer(sock, req, ip, addr, addrLen);
 	sqlite3_close_v2(db);
 }

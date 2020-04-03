@@ -8,15 +8,16 @@
 
 #include "database.h"
 
-int dbGetIp(sqlite3 *db, const char * const domain, const size_t lenDomain) {
+int dbGetIp(sqlite3 *db, const char * const domain, const size_t lenDomain, bool * const expired) {
 	sqlite3_stmt *query;
-	int ret = sqlite3_prepare_v2(db, "SELECT ip FROM dns WHERE domain = ? AND expire > STRFTIME('%s', 'NOW')", 70, &query, NULL);
+	int ret = sqlite3_prepare_v2(db, "SELECT ip, expire > STRFTIME('%s', 'NOW') FROM dns WHERE domain=?", 65, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL query: %d\n", ret); return 1;}
 
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
 	ret = sqlite3_step(query);
 
 	const int result = (ret == SQLITE_ROW) ? sqlite3_column_int(query, 0) : 1;
+	*expired = sqlite3_column_int(query, 1);
 
 	sqlite3_finalize(query);
 	return result;
