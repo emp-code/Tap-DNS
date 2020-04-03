@@ -1,10 +1,10 @@
+#include <arpa/inet.h>
+#include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/random.h>
-#include <ctype.h>
-#include <arpa/inet.h>
 
 #include "Includes/bit.h"
 

@@ -1,15 +1,14 @@
 #define TAPDNS_PORT_INTERNAL 53 // Port to accept connections on
 #define TAPDNS_BUFLEN 1024
 
-#include <stdio.h>
-#include <string.h>
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <ctype.h>
-
-#include <arpa/inet.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
-#include <pwd.h>
 
 #include "respond.h"
 
