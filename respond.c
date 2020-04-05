@@ -1,6 +1,8 @@
-// Details of DNS server to use
+// Google DNS
+#define TAPDNS_SERVER_ADDR "8.8.8.8"
+#define TAPDNS_SERVER_HOST "dns.google"
+
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
-#define TAPDNS_SERVER_ADDR "8.8.8.8" // Google DNS
 #define TAPDNS_SERVER_PORT 853
 #define TAPDNS_PORT_TOR 9050
 #define TAPDNS_SOCKET_TIMEOUT 30
@@ -148,6 +150,7 @@ uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * 
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_init(&ssl);
 	if (mbedtls_ssl_setup(&ssl, &conf) != 0) {puts("ERROR: Failed setting up TLS"); return 1;}
+	if (mbedtls_ssl_set_hostname(&ssl, TAPDNS_SERVER_HOST) != 0) {puts("Failed setting hostname"); return 1;}
 	mbedtls_ssl_set_bio(&ssl, &sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	int ret;
