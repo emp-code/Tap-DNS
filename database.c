@@ -10,7 +10,7 @@
 
 int dbGetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, bool * const expired) {
 	sqlite3_stmt *query;
-	int ret = sqlite3_prepare_v2(db, "SELECT ip, expire > STRFTIME('%s', 'NOW') FROM dns WHERE domain=?", 65, &query, NULL);
+	int ret = sqlite3_prepare_v2(db, "SELECT ip, STRFTIME('%s', 'NOW') > expire FROM dns WHERE domain=?", 65, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL query: %d\n", ret); return 1;}
 
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
