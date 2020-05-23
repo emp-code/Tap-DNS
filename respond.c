@@ -1,14 +1,51 @@
-// Google DNS
-#define TAPDNS_SERVER_ADDR "8.8.8.8"
-#define TAPDNS_SERVER_HOST "dns.google"
+// blahdns
+//#define TAPDNS_SERVER_ADDR "159.69.198.101"
+//#define TAPDNS_SERVER_HOST "dot-de.blahdns.com"
 
+// Cloudflare DNS
+//#define TAPDNS_SERVER_ADDR "1.1.1.1"
+//#define TAPDNS_SERVER_HOST "cloudflare-dns.com"
+
+// Comcast DNS
+//#define TAPDNS_SERVER_ADDR "96.113.151.145"
+//#define TAPDNS_SERVER_HOST "dot.xfinity.com"
+
+// Foundation for Applied Privacy
+//#define TAPDNS_SERVER_ADDR "93.177.65.183"
+//#define TAPDNS_SERVER_HOST "dot1.applied-privacy.net"
+
+// Google DNS
+//#define TAPDNS_SERVER_ADDR "8.8.8.8"
+//#define TAPDNS_SERVER_HOST "dns.google"
+
+// NixNet Uncensored
+//#define TAPDNS_SERVER_ADDR "198.251.90.114"
+//#define TAPDNS_SERVER_HOST "uncensored.any.dns.nixnet.xyz"
+
+// Quad9 non-filtering | https://quad9.net
+#define TAPDNS_SERVER_ADDR "9.9.9.10"
+#define TAPDNS_SERVER_HOST "dns.quad9.net"
+
+// securedns.eu
+//#define TAPDNS_SERVER_ADDR "146.185.167.43"
+//#define TAPDNS_SERVER_HOST "dot.securedns.eu"
+
+// Snopyta | https://snopyta.org/service/dns/index.html
+//#define TAPDNS_SERVER_ADDR "95.216.24.230"
+//#define TAPDNS_SERVER_HOST "fi.dot.dns.snopyta.org"
+
+// Switch.ch | https://www.switch.ch/security/info/public-dns/
+//#define TAPDNS_SERVER_ADDR "130.59.31.248"
+//#define TAPDNS_SERVER_HOST "dns.switch.ch"
+
+// Settings
 #define TAPDNS_ADDR_FAMILY AF_INET // IPv4
-#define TAPDNS_SERVER_PORT 853
+#define TAPDNS_SERVER_PORT 853 // DNS over TLS
 #define TAPDNS_PORT_TOR 9050
 #define TAPDNS_SOCKET_TIMEOUT 30
-#define TAPDNS_MINTTL 86400
-#define TAPDNS_BUFLEN 512
+#define TAPDNS_MINTTL 86400 // 1 day
 
+#define TAPDNS_BUFLEN 512
 #define UINT32_LOCALHOST 16777343
 #define TAPDNS_OFFSET_TCP 2
 #define TAPDNS_OFFSET_UDP 0
