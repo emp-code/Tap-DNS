@@ -79,10 +79,10 @@
 #include <mbedtls/x509.h>
 #include <mbedtls/error.h>
 
-mbedtls_ssl_config conf;
-mbedtls_entropy_context entropy;
-mbedtls_ctr_drbg_context ctr_drbg;
-mbedtls_x509_crt cacert;
+static mbedtls_ssl_config conf;
+static mbedtls_entropy_context entropy;
+static mbedtls_ctr_drbg_context ctr_drbg;
+static mbedtls_x509_crt cacert;
 
 static uint16_t get_uint16(const unsigned char * const c) {uint16_t v; memcpy(&v, c, 2); return v;}
 static uint32_t get_uint32(const unsigned char * const c) {uint32_t v; memcpy(&v, c, 4); return v;}
