@@ -215,13 +215,13 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
 
 	if (dnsRequest_GetOpcode(req) != 0) {
-		puts("DEBUG: Non-standard OPCODE");
+		puts("Invalid OPCODE");
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
 	}
 
 	if (!isDomainValid(domain, domainLen)) {
-		printf("DEBUG: Invalid domain: %.*s\n", (int)domainLen, domain);
+		printf("I %.*s\n", (int)domainLen, domain);
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
 	}
@@ -238,7 +238,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	const int tldLoc = getTldLocation(db, domain);
 	if (tldLoc < 2) {
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
-		printf("DEBUG: TLD not found for domain: %.*s\n", (int)domainLen, domain);
+		printf("I %.*s\n", (int)domainLen, domain);
 		return;
 	}
 
