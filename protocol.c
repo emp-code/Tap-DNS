@@ -89,6 +89,7 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain, const 
 	return 19 + lenQuestion;
 }
 
+// offset: 2 for TCP, 0 for UDP
 int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const req, const uint32_t ip, const size_t offset) {
 	memcpy(answer + 2, req + offset, 2); // Bytes 1-2: Transaction ID. Copy from Request.
 
@@ -287,7 +288,6 @@ static uint32_t validIp(const uint32_t ip) {
 	) ? 0 : ip;
 }
 
-// offset: TAPDNS_OFFSET_TCP or TAPDNS_OFFSET_UDP
 uint32_t dnsResponse_GetIp(const unsigned char * const res, const int resLen, uint32_t * const ttl) {
 	if (memcmp(id, res + 2, 2) != 0) puts("WARNING: ID mismatch");
 	if (memcmp(res + 14, question, lenQuestion) != 0) puts("WARNING: Question section does not match");
