@@ -220,7 +220,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		return;
 	}
 
-	if (isInvalidDomain(domain, domainLen)) {
+	if (!isDomainValid(domain, domainLen)) {
 		printf("DEBUG: Invalid domain: %.*s\n", (int)domainLen, domain);
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;

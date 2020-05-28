@@ -1,12 +1,12 @@
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "domain.h"
 
-// Return zero if valid
-int isInvalidDomain(const char * const domain, const size_t domainLen) {
+bool isDomainValid(const char * const domain, const size_t domainLen) {
 	if (domain == NULL) return 1;
 
 	if (domainLen < 4 || domainLen > TAPDNS_MAXLEN_DOMAIN) return 2;
@@ -21,5 +21,5 @@ int isInvalidDomain(const char * const domain, const size_t domainLen) {
 
 //	if (getTldLocation(domain, NULL) < 0) return 8;
 
-	return 0;
+	return true;
 }

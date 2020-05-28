@@ -3,6 +3,8 @@
 
 #define TAPDNS_MAXLEN_DOMAIN 256
 
-int isInvalidDomain(const char * const domain, const size_t domainLen);
+#include <stdbool.h>
+
+bool isDomainValid(const char * const domain, const size_t domainLen);
 
 #endif
