@@ -14,7 +14,7 @@ static unsigned char id[2];
 unsigned char question[256];
 size_t lenQuestion;
 
-int dnsCreateRequest(unsigned char * const rq, const char * const domain) {
+int dnsCreateRequest(unsigned char * const rq, const char * const domain, const size_t lenDomain) {
 	lenQuestion = 0;
 
 	// Bytes 1-2: Transaction ID.
@@ -60,9 +60,9 @@ int dnsCreateRequest(unsigned char * const rq, const char * const domain) {
 	while(1) {
 		bool final = false;
 
-		const char *dot = strchr(dom, '.');
+		const char *dot = memchr(dom, '.', (domain + lenDomain) - dom);
 		if (dot == NULL) {
-			dot = domain + strlen(domain);
+			dot = domain + lenDomain;
 			final = true;
 		}
 

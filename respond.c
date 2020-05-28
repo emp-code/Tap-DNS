@@ -176,10 +176,10 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 	return (ret == len) ? 0 : -1;
 }
 
-uint32_t queryDns(const char * const domain, const size_t domainLen, uint32_t * const ttl) {
+uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * const ttl) {
 	unsigned char req[100];
 	bzero(req, 100);
-	const int reqLen = dnsCreateRequest(req, domain);
+	const int reqLen = dnsCreateRequest(req, domain, lenDomain);
 
 	int sock;
 	if (torConnect(&sock) != 0) {puts("ERROR: Failed creating socket"); return 1;}
