@@ -250,8 +250,9 @@ bool dbKeywordBlocked(sqlite3 * const db, const char * const domain, const int t
 		const char * const kw = (char*)sqlite3_column_text(query, 0);
 
 		const char * const match = strstr(domain, kw);
-		
+
 		if (match != NULL && (match - domain) < tldLoc) {
+			printf("K=%s\n", kw);
 			sqlite3_finalize(query);
 			return true;
 		}
