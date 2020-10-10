@@ -122,26 +122,28 @@ int setupTls(void) {
 	if (mbedtls_ssl_set_hostname(&ssl, TAPDNS_SERVER_HOST) != 0) {puts("Failed setting hostname"); return -1;}	return 0;
 }
 
-static int makeTorSocket(int * const sock) {
+static int makeTorSocket(void) {
 	struct sockaddr_in torAddr;
 	torAddr.sin_family = AF_INET;
 	torAddr.sin_port = htons(TAPDNS_PORT_TOR);
 	torAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	if ((*sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {perror("socket()"); return -1;}
+	const int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock < 0) {perror("socket()"); return -1;}
 
 	// Socket Timeout
 	struct timeval tv;
 	tv.tv_sec = TAPDNS_SOCKET_TIMEOUT;
 	tv.tv_usec = 0;
-	setsockopt(*sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
 
-	if (connect(*sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return -1;}
-	return 0;
+	if (connect(sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return -1;}
+	return sock;
 }
 
-static int torConnect(int * const sock) {
-	if (makeTorSocket(sock) != 0) return -1;
+static int torConnect(void) {
+	const int sock = makeTorSocket();
+	if (sock < 0) return -1;
 
 	const size_t lenHost = strlen(TAPDNS_SERVER_ADDR);
 	const ssize_t lenReq = 10 + lenHost;
@@ -155,16 +157,16 @@ static int torConnect(int * const sock) {
 	memcpy(req + 9, TAPDNS_SERVER_ADDR, lenHost);
 	req[9 + lenHost] = '\0';
 
-	if ((send(*sock, req, lenReq, 0)) != lenReq) return -1;
+	if ((send(sock, req, lenReq, 0)) != lenReq) return -1;
 
 	unsigned char reply[8];
-	if (recv(*sock, reply, 8, 0) != 8) return -1;
+	if (recv(sock, reply, 8, 0) != 8) return -1;
 
 	if ((uint8_t)reply[0] != 0) return -1; // version: 0
 	if ((uint8_t)reply[1] != 90) return -1; // status: 90
 	if (get_uint16(reply + 2) != 0) return -1; // port: 0
 
-	return 0;
+	return sock;
 }
 
 int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
@@ -193,8 +195,8 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	unsigned char req[100];
 	int reqLen = dnsCreateRequest(reqId, req, question, &lenQuestion, (unsigned char*)domain, lenDomain);
 
-	int sock;
-	if (torConnect(&sock) != 0) {puts("ERROR: Failed creating socket"); return 1;}
+	int sock = torConnect();
+	if (sock < 0) {puts("ERROR: Failed creating socket"); return 1;}
 	mbedtls_ssl_set_bio(&ssl, &sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	int ret;
