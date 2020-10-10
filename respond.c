@@ -53,6 +53,7 @@
 #define ANSI_RED "\x1B[0;31m"
 #define ANSI_GRN "\x1B[0;32m"
 #define ANSI_YLW "\x1B[0;33m"
+#define ANSI_MAG "\x1B[0;35m"
 #define ANSI_RST "\x1B[m"
 
 #include <arpa/inet.h>
@@ -60,6 +61,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/random.h>
 
 #include <sqlite3.h>
 
@@ -163,7 +165,7 @@ static int torConnect(int * const sock) {
 int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
-	const int len = dnsCreateAnswer(answer, req, ip, (addr == NULL) ? 2 : 0);
+	const int len = dnsCreateAnswer(answer, req, ip);
 	if (len < 1) return len;
 
 	const int ret = (addr == NULL) ?
@@ -175,9 +177,16 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 }
 
 uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * const ttl) {
+	*ttl = 3600; // 1h, TODO dynamic
+
+	size_t lenQuestion = 0;
+	unsigned char question[256];
+
+	uint16_t reqId;
+	getrandom(&reqId, 2, 0);
+
 	unsigned char req[100];
-	bzero(req, 100);
-	const int reqLen = dnsCreateRequest(req, domain, lenDomain);
+	int reqLen = dnsCreateRequest(reqId, req, question, &lenQuestion, (unsigned char*)domain, lenDomain);
 
 	int sock;
 	if (torConnect(&sock) != 0) {puts("ERROR: Failed creating socket"); return 1;}
@@ -205,20 +214,20 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	mbedtls_ssl_free(&ssl);
 	close(sock);
 
-	return (ret > 0) ? dnsResponse_GetIp(res, ret, ttl) : 1;
+	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion) : 1;
 }
 
 // Respond to a client's DNS request
 void respond(const int sock, const unsigned char * const req, const size_t reqLen, const struct sockaddr * const addr, socklen_t addrLen) {
-	// Get the domain that was requested
-	char domain[TAPDNS_MAXLEN_DOMAIN];
-	const size_t domainLen = dnsRequest_GetDomain(req, domain, (addr == NULL) ? 2 : 0);
-
-	if (dnsRequest_GetOpcode(req) != 0) {
-		puts("Invalid OPCODE");
+	if ((req[3] & 120) != 0) {
+		printf("Invalid OPCODE: %u\n", req[3] & 120);
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
 	}
+
+	// Get the domain that was requested
+	char domain[TAPDNS_MAXLEN_DOMAIN];
+	const size_t domainLen = dnsRequest_GetDomain(req, domain);
 
 	if (!isDomainValid(domain, domainLen)) {
 		printf("I %.*s\n", (int)domainLen, domain);
@@ -285,20 +294,23 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	if (ip == 1 || expired) {
 		// IP does not exist in the database or there was an error getting it
 		uint32_t ttl;
-		const uint32_t ip2 = queryDns(domain, domainLen, &ttl);
+		const uint32_t newIp = queryDns(domain, domainLen, &ttl);
 
-		if (ip2 != 1) {
+		if (newIp != 1) {
 			// Successfully got response from the server, save it to the database
-			ip = ip2;
+			ip = newIp;
 			dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
 			printf(ANSI_RED"+ %.*s"ANSI_RST"\n", (int)domainLen, domain);
-		}
-
-		if (ip == 1) {
+		} else if (ip == 1) {
+			// Failed to get IP, not in database
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf(ANSI_YLW"E %.*s"ANSI_RST"\n", (int)domainLen, domain);
 			sqlite3_close_v2(db);
 			return;
+		} else {
+			// Failed to get IP, send expired entry from database
+			// TODO: Upper limit on age
+			printf(ANSI_MAG"X %.*s"ANSI_RST"\n", (int)domainLen, domain);
 		}
 	} else printf(ANSI_GRN"  %.*s"ANSI_RST"\n", (int)domainLen, domain);
 

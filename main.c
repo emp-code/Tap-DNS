@@ -38,7 +38,7 @@ static void acceptConnections_tcp() {
 		unsigned char req[TAPDNS_BUFLEN + 1];
 		const ssize_t reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
 		if (reqLen < 0) {perror("Failed receiving a connection"); close(newSock); return;}
-		respond(newSock, req, reqLen, NULL, 0);
+		respond(newSock, req + 2, reqLen - 2, NULL, 0);
 		close(newSock);
 	}
 
