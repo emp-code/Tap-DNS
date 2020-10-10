@@ -79,6 +79,7 @@
 #include <mbedtls/x509.h>
 #include <mbedtls/error.h>
 
+static mbedtls_ssl_context ssl;
 static mbedtls_ssl_config conf;
 static mbedtls_entropy_context entropy;
 static mbedtls_ctr_drbg_context ctr_drbg;
@@ -90,6 +91,7 @@ static void set_uint16(char * const c, const uint16_t v) {memcpy(c, &v, 2);}
 static void set_uint32(char * const c, const uint32_t v) {memcpy(c, &v, 4);}
 
 void freeTls(void) {
+	mbedtls_ssl_free(&ssl);
 	mbedtls_ssl_config_free(&conf);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 	mbedtls_entropy_free(&entropy);
@@ -114,7 +116,10 @@ int setupTls(void) {
 	mbedtls_ssl_conf_renegotiation(&conf, MBEDTLS_SSL_RENEGOTIATION_DISABLED);
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 	mbedtls_ssl_conf_session_tickets(&conf, MBEDTLS_SSL_SESSION_TICKETS_DISABLED);
-	return 0;
+
+	mbedtls_ssl_init(&ssl);
+	if (mbedtls_ssl_setup(&ssl, &conf) != 0) {puts("Failed setting up TLS"); return -1;}
+	if (mbedtls_ssl_set_hostname(&ssl, TAPDNS_SERVER_HOST) != 0) {puts("Failed setting hostname"); return -1;}	return 0;
 }
 
 static int makeTorSocket(int * const sock) {
@@ -190,20 +195,25 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 
 	int sock;
 	if (torConnect(&sock) != 0) {puts("ERROR: Failed creating socket"); return 1;}
-
-	mbedtls_ssl_context ssl;
-	mbedtls_ssl_init(&ssl);
-	if (mbedtls_ssl_setup(&ssl, &conf) != 0) {puts("ERROR: Failed setting up TLS"); return 1;}
-	if (mbedtls_ssl_set_hostname(&ssl, TAPDNS_SERVER_HOST) != 0) {puts("Failed setting hostname"); return 1;}
 	mbedtls_ssl_set_bio(&ssl, &sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	int ret;
 	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {puts("ERROR: Failed TLS handshake"); return 1;}
+		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			puts("ERROR: Failed TLS handshake");
+			mbedtls_ssl_close_notify(&ssl);
+			mbedtls_ssl_session_reset(&ssl);
+			return 1;
+		}
 	}
 
 	const uint32_t flags = mbedtls_ssl_get_verify_result(&ssl);
-	if (flags != 0) {puts("ERROR: Failed verifying cert"); return 1;} // Invalid cert
+	if (flags != 0) {
+		puts("ERROR: Failed verifying cert");
+		mbedtls_ssl_close_notify(&ssl);
+		mbedtls_ssl_session_reset(&ssl);
+		return 1;
+	}
 
 	do {ret = mbedtls_ssl_write(&ssl, req, reqLen);} while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 
@@ -211,7 +221,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	do {ret = mbedtls_ssl_read(&ssl, res, TAPDNS_BUFLEN);} while (ret == MBEDTLS_ERR_SSL_WANT_READ);
 
 	mbedtls_ssl_close_notify(&ssl);
-	mbedtls_ssl_free(&ssl);
+	mbedtls_ssl_session_reset(&ssl);
 	close(sock);
 
 	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion) : 1;
