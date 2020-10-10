@@ -56,7 +56,7 @@ int dnsCreateRequest(const uint16_t id, unsigned char * const rq, unsigned char 
 		if (final) break;
 	}
 
-	memcpy(question + *lenQuestion, "\0\0\1\0\1", 5); // 0: end of name; 01: MX/A record; 01: Internet question class
+	memcpy(question + *lenQuestion, "\0\0\1\0\1", 5); // 0: end of name; 01: A record; 01: Internet question class
 	(*lenQuestion) += 5;
 
 	memcpy(rq + 14, question, *lenQuestion);
