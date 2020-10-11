@@ -61,8 +61,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/random.h>
+#include <unistd.h>
 
 #include <sqlite3.h>
 
@@ -72,13 +72,13 @@
 
 #include "respond.h"
 
+#include <mbedtls/certs.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/error.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/certs.h>
 #include <mbedtls/x509.h>
-#include <mbedtls/error.h>
 
 static mbedtls_ssl_context ssl;
 static mbedtls_ssl_config conf;
