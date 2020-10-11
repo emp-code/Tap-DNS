@@ -87,9 +87,7 @@ static mbedtls_ctr_drbg_context ctr_drbg;
 static mbedtls_x509_crt cacert;
 
 static uint16_t get_uint16(const unsigned char * const c) {uint16_t v; memcpy(&v, c, 2); return v;}
-static uint32_t get_uint32(const unsigned char * const c) {uint32_t v; memcpy(&v, c, 4); return v;}
-static void set_uint16(char * const c, const uint16_t v) {memcpy(c, &v, 2);}
-static void set_uint32(char * const c, const uint32_t v) {memcpy(c, &v, 4);}
+static void set_uint16(unsigned char * const c, const uint16_t v) {memcpy(c, &v, 2);}
 
 void freeTls(void) {
 	mbedtls_ssl_free(&ssl);
@@ -146,26 +144,21 @@ static int torConnect(void) {
 	const int sock = makeTorSocket();
 	if (sock < 0) return -1;
 
-	const size_t lenHost = strlen(TAPDNS_SERVER_ADDR);
-	const ssize_t lenReq = 10 + lenHost;
-	char req[lenReq];
+	unsigned char req[9];
+	req[0] = 4; // VER: 4
+	req[1] = 1; // CMD: connect
+	set_uint16(req + 2, htons(TAPDNS_SERVER_PORT)); // DSTPORT
+	inet_pton(AF_INET, TAPDNS_SERVER_ADDR, req + 4); //DSTIP
+	req[8] = 0; // ID
 
-	req[0] = 4; // SOCKS version 4
-	req[1] = 1; // Command: connect
-	set_uint16(req + 2, htons(TAPDNS_SERVER_PORT)); // Port number
-	set_uint32(req + 4, htonl(1)); // IP 0.0.0.1 - let Tor handle DNS
-	req[8] = 0; // username (empty)
-	memcpy(req + 9, TAPDNS_SERVER_ADDR, lenHost);
-	req[9 + lenHost] = '\0';
-
-	if ((send(sock, req, lenReq, 0)) != lenReq) {close(sock); return -1;}
+	if ((send(sock, req, 9, 0)) != 9) {close(sock); return -1;}
 
 	unsigned char reply[8];
 	if (recv(sock, reply, 8, 0) != 8) {close(sock); return -1;}
 
-	if ((uint8_t)reply[0] != 0) {close(sock); return -1;} // version: 0
-	if ((uint8_t)reply[1] != 90) {close(sock); return -1;} // status: 90
-	if (get_uint16(reply + 2) != 0) {close(sock); return -1;} // port: 0
+	if ((uint8_t)reply[0] != 0) {close(sock); return -1;} // VN: 0
+	if ((uint8_t)reply[1] != 90) {close(sock); return -1;} // REP: 90
+	if (get_uint16(reply + 2) != 0) {close(sock); return -1;} // DSTPORT: 0
 
 	return sock;
 }
