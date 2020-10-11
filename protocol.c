@@ -175,7 +175,7 @@ static uint32_t validIp(const uint32_t ip) {
 	) ? 0 : ip;
 }
 
-static uint32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen) {
+static uint32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int rrLen, uint32_t * const ttl) {
 	int offset = 0;
 	bool pointer = false;
 
@@ -191,6 +191,11 @@ static uint32_t dnsResponse_GetIp_get(const unsigned char * const rr, const int 
 			memcpy((unsigned char*)&lenRecord + 1, rr + offset + 8, 1);
 
 			if (memcmp(rr + offset, "\0\1\0\1", 4) == 0 && lenRecord == 4) { // A Record
+				memcpy((unsigned char*)ttl + 0, rr + offset + 7, 1);
+				memcpy((unsigned char*)ttl + 1, rr + offset + 6, 1);
+				memcpy((unsigned char*)ttl + 2, rr + offset + 5, 1);
+				memcpy((unsigned char*)ttl + 3, rr + offset + 4, 1);
+
 				uint32_t ip;
 				memcpy(&ip, rr + offset + 10, 4);
 				return ip;
@@ -231,9 +236,9 @@ static int getAnswerCount(const uint16_t reqId, const unsigned char * const res,
 	return answerCount;
 }
 
-uint32_t dnsResponse_GetIp(const uint16_t reqId, const unsigned char * const res, const int lenRes, const unsigned char * const question, const size_t lenQuestion) {
+uint32_t dnsResponse_GetIp(const uint16_t reqId, const unsigned char * const res, const int lenRes, const unsigned char * const question, const size_t lenQuestion, uint32_t * const ttl) {
 	const int answerCount = getAnswerCount(reqId, res, lenRes, question, lenQuestion);
 	if (answerCount <= 0) return 0;
 
-	return validIp(dnsResponse_GetIp_get(res + 12 + lenQuestion, lenRes - 12 - lenQuestion));
+	return validIp(dnsResponse_GetIp_get(res + 12 + lenQuestion, lenRes - 12 - lenQuestion, ttl));
 }

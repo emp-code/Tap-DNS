@@ -184,8 +184,6 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int i
 }
 
 uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * const ttl) {
-	*ttl = 3600; // 1h, TODO dynamic
-
 	size_t lenQuestion = 0;
 	unsigned char question[256];
 
@@ -228,7 +226,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	mbedtls_ssl_session_reset(&ssl);
 	close(sock);
 
-	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion) : 1;
+	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion, ttl) : 1;
 }
 
 // Respond to a client's DNS request
@@ -309,12 +307,13 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		// IP does not exist in the database or there was an error getting it
 		uint32_t ttl;
 		const uint32_t newIp = queryDns(domain, domainLen, &ttl);
+		if (ttl < TAPDNS_MINTTL) ttl = TAPDNS_MINTTL;
 
 		if (newIp != 1) {
 			// Successfully got response from the server, save it to the database
 			ip = newIp;
-			dbSetIp(db, domain, domainLen, ip, (ttl < TAPDNS_MINTTL) ? TAPDNS_MINTTL : ttl);
-			printf(ANSI_RED"+ %.*s"ANSI_RST"\n", (int)domainLen, domain);
+			dbSetIp(db, domain, domainLen, ip, ttl);
+			printf(ANSI_RED"+ %.*s"ANSI_RST" (%um)\n", (int)domainLen, domain, ttl / 60);
 		} else if (ip == 1) {
 			// Failed to get IP, not in database
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
