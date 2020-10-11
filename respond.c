@@ -44,6 +44,7 @@
 #define TAPDNS_PORT_TOR 9050
 #define TAPDNS_SOCKET_TIMEOUT 30
 #define TAPDNS_MINTTL 3600 // 1 hour
+#define TAPDNS_MAXTTL 86400 // 24 hours
 
 #define TAPDNS_BUFLEN 512
 #define UINT32_LOCALHOST 16777343
@@ -308,6 +309,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 		uint32_t ttl;
 		const uint32_t newIp = queryDns(domain, domainLen, &ttl);
 		if (ttl < TAPDNS_MINTTL) ttl = TAPDNS_MINTTL;
+		else if (ttl > TAPDNS_MAXTTL) ttl = TAPDNS_MAXTTL;
 
 		if (newIp != 1) {
 			// Successfully got response from the server, save it to the database
