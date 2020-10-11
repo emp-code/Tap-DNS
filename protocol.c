@@ -110,8 +110,8 @@ int dnsCreateAnswer(unsigned char * const answer, const unsigned char * const re
 				0, 1, // Type A
 				0, 1, // Class Internet
 				0, 0, 0, 0, // TTL: 0
-				0, 4, // 4 Bytes (IP Address)
-			0}
+				0, 4 // 4 Bytes (IP Address)
+			}
 		, 12);
 		memcpy(answer + totalLen + 12, &ip, 4);
 		totalLen += 16;
