@@ -163,7 +163,7 @@ static int torConnect(void) {
 	return sock;
 }
 
-int dnsSendAnswer(const int sockIn, const unsigned char * const req, const uint32_t ip, const struct sockaddr * const addr, socklen_t addrLen) {
+static int dnsSendAnswer(const int sockIn, const unsigned char * const req, const uint32_t ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
 	const int len = dnsCreateAnswer(answer, req, ip);
@@ -177,7 +177,7 @@ int dnsSendAnswer(const int sockIn, const unsigned char * const req, const uint3
 	return (ret == len) ? 0 : -1;
 }
 
-uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * const ttl) {
+static uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * const ttl) {
 	size_t lenQuestion = 0;
 	unsigned char question[256];
 
