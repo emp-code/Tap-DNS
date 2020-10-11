@@ -137,7 +137,7 @@ static int makeTorSocket(void) {
 	tv.tv_usec = 0;
 	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(struct timeval));
 
-	if (connect(sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); return -1;}
+	if (connect(sock, (struct sockaddr*)&torAddr, sizeof(struct sockaddr)) == -1) {perror("connect()"); close(sock); return -1;}
 	return sock;
 }
 
@@ -157,14 +157,14 @@ static int torConnect(void) {
 	memcpy(req + 9, TAPDNS_SERVER_ADDR, lenHost);
 	req[9 + lenHost] = '\0';
 
-	if ((send(sock, req, lenReq, 0)) != lenReq) return -1;
+	if ((send(sock, req, lenReq, 0)) != lenReq) {close(sock); return -1;}
 
 	unsigned char reply[8];
-	if (recv(sock, reply, 8, 0) != 8) return -1;
+	if (recv(sock, reply, 8, 0) != 8) {close(sock); return -1;}
 
-	if ((uint8_t)reply[0] != 0) return -1; // version: 0
-	if ((uint8_t)reply[1] != 90) return -1; // status: 90
-	if (get_uint16(reply + 2) != 0) return -1; // port: 0
+	if ((uint8_t)reply[0] != 0) {close(sock); return -1;} // version: 0
+	if ((uint8_t)reply[1] != 90) {close(sock); return -1;} // status: 90
+	if (get_uint16(reply + 2) != 0) {close(sock); return -1;} // port: 0
 
 	return sock;
 }
@@ -205,6 +205,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 			puts("ERROR: Failed TLS handshake");
 			mbedtls_ssl_close_notify(&ssl);
 			mbedtls_ssl_session_reset(&ssl);
+			close(sock);
 			return 1;
 		}
 	}
@@ -214,6 +215,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 		puts("ERROR: Failed verifying cert");
 		mbedtls_ssl_close_notify(&ssl);
 		mbedtls_ssl_session_reset(&ssl);
+		close(sock);
 		return 1;
 	}
 
