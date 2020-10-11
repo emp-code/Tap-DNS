@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/random.h>
 
 #include <sqlite3.h>
 
@@ -30,9 +31,13 @@ int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomai
 	int ret = sqlite3_prepare_v2(db, "INSERT INTO dns (domain, ip, expire) VALUES (?, ?, STRFTIME('%s', 'NOW') + ?)", 77, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL insert query: %d\n", ret); sqlite3_close_v2(db); return -2;}
 
+	// Randomly add -128..127 seconds to TTL
+	int8_t r = 0;
+	getrandom(&r, 1, 0);
+
 	sqlite3_bind_text(query, 1, domain, lenDomain, SQLITE_STATIC);
 	sqlite3_bind_int(query, 2, ip);
-	sqlite3_bind_int(query, 3, ttl);
+	sqlite3_bind_int(query, 3, ttl + r);
 	ret = sqlite3_step(query);
 	sqlite3_finalize(query);
 
