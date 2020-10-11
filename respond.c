@@ -227,7 +227,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	mbedtls_ssl_session_reset(&ssl);
 	close(sock);
 
-	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion, ttl) : 1;
+	return (ret > 0) ? dnsResponse_GetIp(reqId, res + 2, ret - 2, question, lenQuestion, ttl) : 0;
 }
 
 // Respond to a client's DNS request
