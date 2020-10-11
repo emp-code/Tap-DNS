@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-int dbGetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, bool * const expired);
+uint32_t dbGetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, bool * const expired);
 int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, const int ip, const int ttl);
 
 bool dbWhitelisted(sqlite3 * const db, const char * const domain, const size_t len);

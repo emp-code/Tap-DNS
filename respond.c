@@ -170,7 +170,7 @@ static int torConnect(void) {
 	return sock;
 }
 
-int dnsSendAnswer(const int sockIn, const unsigned char * const req, const int ip, const struct sockaddr * const addr, socklen_t addrLen) {
+int dnsSendAnswer(const int sockIn, const unsigned char * const req, const uint32_t ip, const struct sockaddr * const addr, socklen_t addrLen) {
 	unsigned char answer[100];
 	bzero(answer, 100);
 	const int len = dnsCreateAnswer(answer, req, ip);
@@ -195,7 +195,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 	int reqLen = dnsCreateRequest(reqId, req, question, &lenQuestion, (unsigned char*)domain, lenDomain);
 
 	int sock = torConnect();
-	if (sock < 0) {puts("ERROR: Failed creating socket"); return 1;}
+	if (sock < 0) {puts("ERROR: Failed creating socket"); return 0;}
 	mbedtls_ssl_set_bio(&ssl, &sock, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 	int ret;
@@ -205,7 +205,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 			mbedtls_ssl_close_notify(&ssl);
 			mbedtls_ssl_session_reset(&ssl);
 			close(sock);
-			return 1;
+			return 0;
 		}
 	}
 
@@ -215,7 +215,7 @@ uint32_t queryDns(const char * const domain, const size_t lenDomain, uint32_t * 
 		mbedtls_ssl_close_notify(&ssl);
 		mbedtls_ssl_session_reset(&ssl);
 		close(sock);
-		return 1;
+		return 0;
 	}
 
 	do {ret = mbedtls_ssl_write(&ssl, req, reqLen);} while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
@@ -304,19 +304,19 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	bool expired = false;
 	uint32_t ip = dbGetIp(db, domain, domainLen, &expired);
 
-	if (ip == 1 || expired) {
+	if (ip == 0 || expired) {
 		// IP does not exist in the database or there was an error getting it
 		uint32_t ttl;
 		const uint32_t newIp = queryDns(domain, domainLen, &ttl);
 		if (ttl < TAPDNS_MINTTL) ttl = TAPDNS_MINTTL;
 		else if (ttl > TAPDNS_MAXTTL) ttl = TAPDNS_MAXTTL;
 
-		if (newIp != 1) {
+		if (newIp != 0) {
 			// Successfully got response from the server, save it to the database
 			ip = newIp;
 			dbSetIp(db, domain, domainLen, ip, ttl);
 			printf(ANSI_RED"+ %.*s"ANSI_RST" (%um)\n", (int)domainLen, domain, ttl / 60);
-		} else if (ip == 1) {
+		} else if (ip == 0) {
 			// Failed to get IP, not in database
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf(ANSI_YLW"E %.*s"ANSI_RST"\n", (int)domainLen, domain);
