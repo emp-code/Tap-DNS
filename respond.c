@@ -45,6 +45,7 @@
 #define TAPDNS_SOCKET_TIMEOUT 30
 #define TAPDNS_MINTTL 3600 // 1 hour
 #define TAPDNS_MAXTTL 86400 // 24 hours
+#define TAPDNS_DB_BUSY_TIMEOUT 30000 // 30s
 
 #define TAPDNS_BUFLEN 512
 #define UINT32_LOCALHOST 16777343
@@ -249,6 +250,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	sqlite3 *db;
 	const int ret = sqlite3_open_v2("Database/Hosts.tap", &db, SQLITE_OPEN_READWRITE, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed opening database: %d\n", ret); sqlite3_close_v2(db); return;}
+	sqlite3_busy_timeout(db, TAPDNS_DB_BUSY_TIMEOUT);
 
 	const int tldLoc = getTldLocation(db, domain);
 	if (tldLoc < 2) {
