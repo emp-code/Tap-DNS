@@ -25,9 +25,8 @@ uint32_t dbGetIp(sqlite3 * const db, const char * const domain, const size_t len
 }
 
 int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, const int ip, const int ttl) {
-	sqlite3_stmt *query;
-
 	// Try insert
+	sqlite3_stmt *query;
 	int ret = sqlite3_prepare_v2(db, "INSERT INTO dns (domain, ip, expire) VALUES (?, ?, STRFTIME('%s', 'NOW') + ?)", 77, &query, NULL);
 	if (ret != SQLITE_OK) {printf("ERROR: Failed preparing SQL insert query: %d\n", ret); sqlite3_close_v2(db); return -2;}
 
@@ -40,7 +39,6 @@ int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomai
 	sqlite3_bind_int(query, 3, ttl + r);
 	ret = sqlite3_step(query);
 	sqlite3_finalize(query);
-
 	if (ret == SQLITE_DONE) return 0;
 
 	// Try update
@@ -52,7 +50,6 @@ int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomai
 	sqlite3_bind_text(query, 3, domain, lenDomain, SQLITE_STATIC);
 	ret = sqlite3_step(query);
 	sqlite3_finalize(query);
-
 	if (ret == SQLITE_DONE) return 0;
 
 	printf("ERROR: Failed inserting row: %d\n", ret);
