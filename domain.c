@@ -1,25 +1,19 @@
 #include <ctype.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>
 
 #include "domain.h"
 
-bool isDomainValid(const char * const domain, const size_t domainLen) {
-	if (domain == NULL) return 1;
+bool isValidDomain(const char * const domain, const int lenDomain) {
+	if (domain == NULL || lenDomain < 4 || lenDomain > TAPDNS_MAXLEN_DOMAIN) return false;
 
-	if (domainLen < 4 || domainLen > TAPDNS_MAXLEN_DOMAIN) return 2;
+	int lastDot = 0;
 
-	if (strspn(domain, "abcdefghijklmnopqrstuvwxyz0123456789.-") != domainLen) return 3; // Allow only letters/numbers/hyphen/dot
+	for (int i = 0; i < lenDomain; i++) {
+		if (domain[i] == '.') lastDot = i;
 
-	if (!isalnum(domain[0])) return 4; // First character must be alphanumeric
+		if (islower(domain[i]) || isdigit(domain[i]) || (i > 0 && (domain[i] == '.' || domain[i] == '-') && isalnum(domain[i - 1] ))) continue;
+		return false;
+	}
 
-	if (strstr(domain, "..") != NULL) return 5;
-	if (strstr(domain, ".-") != NULL) return 6;
-	// Note: -. is valid
-
-//	if (getTldLocation(domain, NULL) < 0) return 8;
-
-	return true;
+	return (lastDot < lenDomain - 2); // (getTldLocation(domain, NULL) > 0)
 }

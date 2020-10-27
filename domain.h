@@ -5,6 +5,6 @@
 
 #include <stdbool.h>
 
-bool isDomainValid(const char * const domain, const size_t domainLen);
+bool isValidDomain(const char * const domain, const int lenDomain);
 
 #endif

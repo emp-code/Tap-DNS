@@ -235,7 +235,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain);
 
-	if (!isDomainValid(domain, domainLen)) {
+	if (!isValidDomain(domain, domainLen)) {
 		printf("I %.*s\n", (int)domainLen, domain);
 		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
