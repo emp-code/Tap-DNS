@@ -236,14 +236,14 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 	char domain[TAPDNS_MAXLEN_DOMAIN];
 	const size_t domainLen = dnsRequest_GetDomain(req, domain);
 
-	if (!isValidDomain(domain, domainLen)) {
-		printf("I %.*s\n", (int)domainLen, domain);
-		dnsSendAnswer(sock, req, 0, addr, addrLen);
+	if (strcmp(domain, "localhost") == 0 || (domainLen > 4 && memcmp(domain + domainLen - 4, ".tap", 4) == 0)) {
+		dnsSendAnswer(sock, req, UINT32_LOCALHOST, addr, addrLen);
 		return;
 	}
 
-	if (strcmp(domain, "localhost") == 0 || (domainLen > 4 && memcmp(domain + domainLen - 4, ".tap", 4) == 0)) {
-		dnsSendAnswer(sock, req, UINT32_LOCALHOST, addr, addrLen);
+	if (!isValidDomain(domain, domainLen)) {
+		printf("I %.*s\n", (int)domainLen, domain);
+		dnsSendAnswer(sock, req, 0, addr, addrLen);
 		return;
 	}
 
