@@ -11,7 +11,12 @@ bool isValidDomain(const char * const domain, const int lenDomain) {
 	for (int i = 0; i < lenDomain; i++) {
 		if (domain[i] == '.') lastDot = i;
 
-		if (islower(domain[i]) || isdigit(domain[i]) || (i > 0 && (domain[i] == '.' || domain[i] == '-') && isalnum(domain[i - 1] ))) continue;
+		if (islower(domain[i]) || isdigit(domain[i]) ||
+			(i > 0 && (
+				   (domain[i] == '.' &&  isalnum(domain[i - 1]))
+				|| (domain[i] == '-' && (isalnum(domain[i - 1]) || domain[i - 1] == '-'))
+		   ))
+		) continue;
 		return false;
 	}
 
