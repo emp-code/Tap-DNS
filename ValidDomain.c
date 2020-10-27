@@ -1,7 +1,7 @@
 #include <ctype.h>
 #include <stddef.h>
 
-#include "domain.h"
+#include "ValidDomain.h"
 
 bool isValidDomain(const char * const domain, const int lenDomain) {
 	if (domain == NULL || lenDomain < 4 || lenDomain > TAPDNS_MAXLEN_DOMAIN) return false;
@@ -15,7 +15,7 @@ bool isValidDomain(const char * const domain, const int lenDomain) {
 			(i > 0 && (
 				   (domain[i] == '.' &&  isalnum(domain[i - 1]))
 				|| (domain[i] == '-' && (isalnum(domain[i - 1]) || domain[i - 1] == '-'))
-		   ))
+			))
 		) continue;
 		return false;
 	}

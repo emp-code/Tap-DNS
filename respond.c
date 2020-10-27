@@ -68,8 +68,8 @@
 #include <sqlite3.h>
 
 #include "database.h"
-#include "domain.h"
 #include "protocol.h"
+#include "ValidDomain.h"
 
 #include "respond.h"
 
