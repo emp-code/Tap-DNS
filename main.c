@@ -33,11 +33,11 @@ static void acceptConnections_tcp() {
 
 	while(1) {
 		const int newSock = accept(sock, NULL, NULL);
-		if (newSock < 0) {puts("ERROR: Failed accepting connection"); return;}
+		if (newSock < 0) {puts("ERROR: Failed accepting TCP connection"); return;}
 
 		unsigned char req[TAPDNS_BUFLEN + 1];
 		const ssize_t reqLen = recv(newSock, req, TAPDNS_BUFLEN, 0);
-		if (reqLen < 0) {perror("Failed receiving a connection"); close(newSock); return;}
+		if (reqLen < 0) {perror("Failed TCP receive"); close(newSock); return;}
 		respond(newSock, req + 2, reqLen - 2, NULL, 0);
 		close(newSock);
 	}
@@ -55,7 +55,7 @@ static void acceptConnections_udp() {
 		socklen_t addrlen = sizeof(addrIn);
 		unsigned char req[TAPDNS_BUFLEN];
 		const ssize_t reqLen = recvfrom(sock, req, TAPDNS_BUFLEN, 0, (struct sockaddr*)&addrIn, &addrlen);
-		if (reqLen < 0) {perror("ERROR: Failed receiving a connection"); continue;}
+		if (reqLen < 0) {perror("ERROR: Failed UDP receive"); continue;}
 		respond(sock, req, reqLen, (struct sockaddr*)&addrIn, addrlen);
 	}
 
@@ -71,11 +71,11 @@ int main() {
 
 	puts(">>> Tap:DNS - The Attenuating Proxy: Deadbolt Name Service");
 
-	if (setupTls() != 0) {puts("ERROR: Failed setting up TLS"); return 1;}
+	if (setupTls() != 0) {puts("ERROR: Failed setupTls()"); return 1;}
 
 	// Fork to accept both UDP and TCP connections
 	const int pid = fork();
-	if (pid < 0) {puts("ERROR: Failed forking connection"); return 1;}
+	if (pid < 0) {puts("ERROR: Failed fork()"); return 1;}
 
 	if (pid == 0)
 		acceptConnections_udp(); // Child thread: Accept UDP connections
