@@ -87,7 +87,6 @@ static mbedtls_entropy_context entropy;
 static mbedtls_ctr_drbg_context ctr_drbg;
 static mbedtls_x509_crt cacert;
 
-static uint16_t get_uint16(const unsigned char * const c) {uint16_t v; memcpy(&v, c, 2); return v;}
 static void set_uint16(unsigned char * const c, const uint16_t v) {memcpy(c, &v, 2);}
 
 void freeTls(void) {
@@ -159,7 +158,7 @@ static int torConnect(void) {
 
 	if ((uint8_t)reply[0] != 0) {close(sock); return -1;} // VN: 0
 	if ((uint8_t)reply[1] != 90) {close(sock); return -1;} // REP: 90
-	if (get_uint16(reply + 2) != 0) {close(sock); return -1;} // DSTPORT: 0
+	if (reply[2] != 0 || reply[3] != 0) {close(sock); return -1;} // DSTPORT: 0
 
 	return sock;
 }
