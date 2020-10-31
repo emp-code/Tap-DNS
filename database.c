@@ -21,7 +21,7 @@ uint32_t dbGetIp(sqlite3 * const db, const char * const domain, const size_t len
 	*expired = sqlite3_column_int(query, 1);
 
 	sqlite3_finalize(query);
-	return (result <= 0) ? 0 : result;
+	return (uint32_t)result;
 }
 
 int dbSetIp(sqlite3 * const db, const char * const domain, const size_t lenDomain, const int ip, const int ttl) {
