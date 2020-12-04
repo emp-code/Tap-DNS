@@ -286,7 +286,7 @@ void respond(const int sock, const unsigned char * const req, const size_t reqLe
 			sqlite3_close_v2(db);
 			return;
 		}
-		
+
 		if (dbKeywordBlocked(db, domain, tldLoc, TAPDNS_TYPE_BLOCK_LO)) {
 			dnsSendAnswer(sock, req, 0, addr, addrLen);
 			printf("K %.*s\n", (int)domainLen, domain);
